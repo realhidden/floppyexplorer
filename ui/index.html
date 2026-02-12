@@ -1620,12 +1620,29 @@ function escHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Download a file via fetch + blob so it works in webviews (Neutralinojs)
+// Save a file extracted from a disk image
 async function saveFile(url, filename) {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error('Download failed');
-    const blob = await res.blob();
+    const arrayBuf = await res.arrayBuffer();
+
+    // Use Neutralino native save dialog when available (desktop app)
+    if (typeof Neutralino !== 'undefined' && Neutralino.os) {
+      const downloads = await Neutralino.os.getPath('downloads');
+      const defaultPath = downloads + '/' + filename;
+      const savePath = await Neutralino.os.showSaveDialog('Save file', {
+        defaultPath,
+        forceOverwrite: true,
+      });
+      if (!savePath) return; // user cancelled
+      await Neutralino.filesystem.writeBinaryFile(savePath, arrayBuf);
+      setStatus('Saved ' + filename);
+      return;
+    }
+
+    // Browser fallback: blob download
+    const blob = new Blob([arrayBuf]);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -1634,6 +1651,18 @@ async function saveFile(url, filename) {
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
   } catch (e) {
+    if (e.code === 'NE_OS_INVKNPT') {
+      // Neutralino getPath not available, try browser fallback
+      const blob = new Blob([await (await fetch(url)).arrayBuffer()]);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      return;
+    }
     alert('Download failed: ' + e.message);
   }
 }
