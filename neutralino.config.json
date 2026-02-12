@@ -35,7 +35,8 @@
       "center": true,
       "resizable": true,
       "enableInspector": true,
-      "exitProcessOnClose": true
+      "exitProcessOnClose": true,
+      "icon": "/ui/icon.png"
     }
   },
   "cli": {

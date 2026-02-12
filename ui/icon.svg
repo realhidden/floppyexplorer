@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0a0a18"/>
+    </linearGradient>
+    <linearGradient id="disk-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2a3e"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="amber-glow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD060"/>
+      <stop offset="100%" stop-color="#FF9000"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glow-strong">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="80" fill="url(#bg)"/>
+
+  <!-- 3.5" floppy disk body -->
+  <rect x="76" y="56" width="360" height="400" rx="12" fill="url(#disk-body)" stroke="#FFB000" stroke-width="2.5" stroke-opacity="0.6"/>
+
+  <!-- Metal slider area (top) -->
+  <rect x="156" y="56" width="200" height="80" rx="4" fill="#0f0f1e" stroke="#FFB000" stroke-width="1.5" stroke-opacity="0.4"/>
+
+  <!-- Slider opening (read/write window) -->
+  <rect x="196" y="66" width="80" height="60" rx="2" fill="#050510" stroke="#FFB000" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Metal slider -->
+  <rect x="156" y="56" width="100" height="80" rx="4" fill="#1a1a30" stroke="#FFB000" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- Label area -->
+  <rect x="106" y="160" width="300" height="140" rx="4" fill="#0f0f1e" stroke="#FFB000" stroke-width="1.5" stroke-opacity="0.3"/>
+
+  <!-- Label text lines (amber CRT style) -->
+  <g filter="url(#glow)" opacity="0.9">
+    <text x="256" y="200" text-anchor="middle" font-family="monospace" font-size="28" font-weight="bold" fill="#FFB000">FLOPPY</text>
+    <text x="256" y="235" text-anchor="middle" font-family="monospace" font-size="28" font-weight="bold" fill="#FFB000">EXPLORER</text>
+    <text x="256" y="272" text-anchor="middle" font-family="monospace" font-size="14" fill="#FF9000" opacity="0.7">EDSK IMAGE ANALYZER</text>
+  </g>
+
+  <!-- Write-protect notch -->
+  <rect x="96" y="390" width="30" height="40" rx="3" fill="#050510" stroke="#FFB000" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Center hub ring -->
+  <circle cx="310" cy="385" r="40" fill="#050510" stroke="#FFB000" stroke-width="2" stroke-opacity="0.4"/>
+  <circle cx="310" cy="385" r="16" fill="#0f0f1e" stroke="#FFB000" stroke-width="1.5" stroke-opacity="0.5"/>
+
+  <!-- Spindle hole detail -->
+  <circle cx="310" cy="385" r="4" fill="#FFB000" opacity="0.3"/>
+
+  <!-- Scanning beam effect (amber line across the disk) -->
+  <g filter="url(#glow-strong)">
+    <line x1="86" y1="340" x2="426" y2="340" stroke="#FFB000" stroke-width="2" opacity="0.6"/>
+  </g>
+
+  <!-- Corner notch (top-right, HD indicator) -->
+  <rect x="376" y="66" width="30" height="30" rx="2" fill="#050510" stroke="#FFB000" stroke-width="1" stroke-opacity="0.3"/>
+
+  <!-- Subtle scanlines overlay -->
+  <g opacity="0.04">
+    <line x1="76" y1="80" x2="436" y2="80" stroke="#FFB000" stroke-width="0.5"/>
+    <line x1="76" y1="100" x2="436" y2="100" stroke="#FFB000" stroke-width="0.5"/>
+    <line x1="76" y1="120" x2="436" y2="120" stroke="#FFB000" stroke-width="0.5"/>
+    <line x1="76" y1="140" x2="436" y2="140" stroke="#FFB000" stroke-width="0.5"/>
+    <line x1="76" y1="320" x2="436" y2="320" stroke="#FFB000" stroke-width="0.5"/>
+    <line x1="76" y1="360" x2="436" y2="360" stroke="#FFB000" stroke-width="0.5"/>
+    <line x1="76" y1="400" x2="436" y2="400" stroke="#FFB000" stroke-width="0.5"/>
+    <line x1="76" y1="420" x2="436" y2="420" stroke="#FFB000" stroke-width="0.5"/>
+  </g>
+</svg>

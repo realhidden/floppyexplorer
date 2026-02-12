@@ -55,6 +55,9 @@ jobs:
             cp "${DIST}/resources.neu" "${STAGE}/${APP}/Contents/MacOS/"
             cp -r "${DIST}/extensions" "${STAGE}/${APP}/Contents/MacOS/"
 
+            # Copy app icon
+            cp ui/app.icns "${STAGE}/${APP}/Contents/Resources/app.icns"
+
             # Create Info.plist
             cat > "${STAGE}/${APP}/Contents/Info.plist" << PLIST
           <?xml version="1.0" encoding="UTF-8"?>

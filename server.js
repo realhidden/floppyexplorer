@@ -8,11 +8,17 @@ const edsk = require('./lib/edsk-parser');
 const gw = require('./lib/greaseweazle');
 
 const PORT = process.env.PORT || 3141;
-const DISKS_DIR = path.join(__dirname, 'disks');
 const UI_DIR = path.join(__dirname, 'ui');
 
+// Use ~/Documents/Floppy Explorer/ when running inside a .app bundle,
+// otherwise use local disks/ for development
+const insideApp = __dirname.includes('.app/');
+const DISKS_DIR = insideApp
+  ? path.join(require('os').homedir(), 'Documents', 'Floppy Explorer')
+  : path.join(__dirname, 'disks');
+
 // Ensure disks directory exists
-if (!fs.existsSync(DISKS_DIR)) fs.mkdirSync(DISKS_DIR);
+if (!fs.existsSync(DISKS_DIR)) fs.mkdirSync(DISKS_DIR, { recursive: true });
 
 // MIME types
 const MIME = {
