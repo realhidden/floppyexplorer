@@ -1,0 +1,49 @@
+{
+  "applicationId": "com.floppy.explorer",
+  "version": "0.1.0",
+  "defaultMode": "window",
+  "port": 0,
+  "enableServer": true,
+  "enableNativeAPI": true,
+  "enableExtensions": true,
+  "tokenSecurity": "one-time",
+  "url": "/loading.html",
+  "documentRoot": "/ui/",
+  "nativeAllowList": [
+    "app.*",
+    "os.*",
+    "window.*",
+    "events.*",
+    "extensions.*",
+    "debug.log"
+  ],
+  "extensions": [
+    {
+      "id": "js.floppy.server",
+      "commandDarwin": "node ${NL_PATH}/extensions/server/main.js",
+      "commandLinux": "node ${NL_PATH}/extensions/server/main.js",
+      "commandWindows": "node ${NL_PATH}/extensions/server/main.js"
+    }
+  ],
+  "modes": {
+    "window": {
+      "title": "Floppy Explorer",
+      "width": 1280,
+      "height": 860,
+      "minWidth": 900,
+      "minHeight": 600,
+      "center": true,
+      "resizable": true,
+      "enableInspector": true,
+      "exitProcessOnClose": true
+    }
+  },
+  "cli": {
+    "binaryName": "floppy-explorer",
+    "resourcesPath": "/ui/",
+    "extensionsPath": "/extensions/",
+    "clientLibrary": "/ui/neutralino.js",
+    "binaryVersion": "6.5.0",
+    "clientVersion": "6.5.0"
+  }
+}

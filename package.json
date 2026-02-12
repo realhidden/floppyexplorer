@@ -1,0 +1,22 @@
+{
+  "name": "floppy-explorer",
+  "version": "0.1.0",
+  "description": "EDSK floppy disk image explorer with Greaseweazle integration",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "desktop": "neu run",
+    "build": "neu build --release",
+    "cli": "node edsk.js"
+  },
+  "keywords": [
+    "edsk",
+    "floppy",
+    "greaseweazle",
+    "disk-image"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^8.19.0"
+  }
+}

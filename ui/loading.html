@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Floppy Explorer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #060a10;
+    color: #FFB000;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .title {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(255,176,0,0.4);
+  }
+  .msg {
+    font-size: 12px;
+    color: #6B5530;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+  <div class="title">FLOPPY EXPLORER</div>
+  <div class="msg">Starting server...</div>
+  <script>
+    (function poll() {
+      fetch('http://localhost:3141/api/disks')
+        .then(r => { if (r.ok) window.location = 'http://localhost:3141'; else throw 0; })
+        .catch(() => setTimeout(poll, 300));
+    })();
+  </script>
+</body>
+</html>
