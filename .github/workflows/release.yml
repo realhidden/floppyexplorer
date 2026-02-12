@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Neutralinojs CLI
+        run: npm install -g @neutralinojs/neu
+
+      - name: Download Neutralino binaries
+        run: neu update --latest
+
+      - name: Build release
+        run: neu build --release
+
+      - name: Package macOS arm64
+        run: |
+          cd dist/floppy-explorer
+          zip -r ../../floppy-explorer-mac-arm64.zip \
+            floppy-explorer-mac_arm64 \
+            resources.neu \
+            extensions/
+        working-directory: .
+
+      - name: Package macOS x64
+        run: |
+          cd dist/floppy-explorer
+          zip -r ../../floppy-explorer-mac-x64.zip \
+            floppy-explorer-mac_x64 \
+            resources.neu \
+            extensions/
+        working-directory: .
+
+      - name: Package macOS universal
+        run: |
+          cd dist/floppy-explorer
+          zip -r ../../floppy-explorer-mac-universal.zip \
+            floppy-explorer-mac_universal \
+            resources.neu \
+            extensions/
+        working-directory: .
+
+      - name: Package Windows x64
+        run: |
+          cd dist/floppy-explorer
+          zip -r ../../floppy-explorer-win-x64.zip \
+            floppy-explorer-win_x64.exe \
+            resources.neu \
+            extensions/
+        working-directory: .
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            floppy-explorer-mac-arm64.zip
+            floppy-explorer-mac-x64.zip
+            floppy-explorer-mac-universal.zip
+            floppy-explorer-win-x64.zip
