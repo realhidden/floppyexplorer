@@ -1228,9 +1228,12 @@ async function checkGW() {
         dom.readBtn.disabled = true;
       } else {
         dom.gwInfo.innerHTML = [
-          info.model ? `Model: <span>${info.model}</span>` : '',
-          info.firmware ? `FW: <span>${info.firmware}</span>` : '',
-          info.port ? `Port: <span>${info.port}</span>` : '',
+          info.host_tools ? `Host Tools: <span>${escHtml(info.host_tools)}</span>` : '',
+          info.port ? `Device: Port: <span>${escHtml(info.port)}</span>` : '',
+          info.model ? `Model: <span>${escHtml(info.model)}</span>` : '',
+          info.mcu ? `MCU: <span>${escHtml(info.mcu)}</span>` : '',
+          info.firmware ? `Firmware: <span>${escHtml(info.firmware)}</span>` : '',
+          info.usb ? `USB: <span>${escHtml(info.usb)}</span>` : '',
         ].filter(Boolean).join('<br>');
         dom.readBtn.disabled = state.reading;
       }

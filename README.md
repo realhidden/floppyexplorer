@@ -41,13 +41,13 @@ A retro-styled EDSK floppy disk image explorer with live [Greaseweazle](https://
 
 ## Screenshots
 
-> **Note:** To add screenshots, place them in a `screenshots/` directory and update the paths below.
+**Sector inspector & hex viewer** — track map, CHRN values, FDC status flags, and full hex dump with ASCII column.
 
-<!--
-![Track Map](screenshots/track-map.png)
 ![Hex Viewer](screenshots/hex-viewer.png)
+
+**File browser** — FAT12 directory listing with VFAT long filenames and 8.3 SFN aliases, with one-click file extraction.
+
 ![File Browser](screenshots/file-browser.png)
--->
 
 The UI uses an **amber CRT aesthetic** — warm phosphor tones on dark backgrounds with a JetBrains Mono monospace font and subtle scanline overlay.
 
