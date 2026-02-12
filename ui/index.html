@@ -1620,6 +1620,24 @@ function escHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Download a file via fetch + blob so it works in webviews (Neutralinojs)
+async function saveFile(url, filename) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Download failed');
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+  } catch (e) {
+    alert('Download failed: ' + e.message);
+  }
+}
+
 async function loadFiles(name) {
   try {
     const files = await api(`/api/disk/${encodeURIComponent(name)}/files`);
@@ -1651,8 +1669,9 @@ async function loadFiles(name) {
 
       // Download link for regular files
       const canDownload = !f.isDir && !f.isVolumeLabel && f.size > 0 && f.cluster >= 2;
+      const dlUrl = `${API}/api/disk/${encodeURIComponent(name)}/download?cluster=${f.cluster}&size=${f.size}&name=${encodeURIComponent(f.name)}`;
       const dlLink = canDownload
-        ? `<a class="dl-btn" href="${API}/api/disk/${encodeURIComponent(name)}/download?cluster=${f.cluster}&size=${f.size}&name=${encodeURIComponent(f.name)}" title="Save file">&#8681;</a>`
+        ? `<a class="dl-btn" href="#" onclick="saveFile('${dlUrl.replace(/'/g, "\\'")}','${escHtml(f.name).replace(/'/g, "\\'")}');return false;" title="Save file">&#8681;</a>`
         : '';
 
       html += `<tr>
