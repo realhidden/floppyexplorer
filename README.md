@@ -159,6 +159,18 @@ This produces downloadable `.zip` archives for:
 - macOS universal
 - Windows x64
 
+### Note for macOS users
+
+Mac builds are **not notarized**. macOS will block the app on first launch. To fix this, run in Terminal:
+
+```bash
+xattr -r -d com.apple.quarantine "/Applications/Floppy Explorer.app"
+```
+
+This resolves the errors:
+- *"Floppy Explorer.app" is damaged and can't be opened*
+- *Apple could not verify "Floppy Explorer.app" is free of malware*
+
 ---
 
 ## License
