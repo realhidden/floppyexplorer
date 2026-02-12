@@ -32,41 +32,73 @@ jobs:
       - name: Build release
         run: neu build --release
 
-      - name: Package macOS arm64
-        run: |
-          cd dist/floppy-explorer
-          zip -r ../../floppy-explorer-mac-arm64.zip \
-            floppy-explorer-mac_arm64 \
-            resources.neu \
-            extensions/
-        working-directory: .
+      - name: Get version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
-      - name: Package macOS x64
+      - name: Create macOS app bundles
         run: |
-          cd dist/floppy-explorer
-          zip -r ../../floppy-explorer-mac-x64.zip \
-            floppy-explorer-mac_x64 \
-            resources.neu \
-            extensions/
-        working-directory: .
+          VERSION="${{ steps.version.outputs.tag }}"
+          DIST="dist/floppy-explorer"
 
-      - name: Package macOS universal
-        run: |
-          cd dist/floppy-explorer
-          zip -r ../../floppy-explorer-mac-universal.zip \
-            floppy-explorer-mac_universal \
-            resources.neu \
-            extensions/
-        working-directory: .
+          for ARCH in arm64 x64 universal; do
+            APP="Floppy Explorer.app"
+            STAGE="stage-mac-${ARCH}"
+            mkdir -p "${STAGE}/${APP}/Contents/MacOS"
+            mkdir -p "${STAGE}/${APP}/Contents/Resources"
+
+            # Copy binary
+            cp "${DIST}/floppy-explorer-mac_${ARCH}" "${STAGE}/${APP}/Contents/MacOS/floppy-explorer"
+            chmod +x "${STAGE}/${APP}/Contents/MacOS/floppy-explorer"
+
+            # Copy resources and extensions alongside the binary
+            cp "${DIST}/resources.neu" "${STAGE}/${APP}/Contents/MacOS/"
+            cp -r "${DIST}/extensions" "${STAGE}/${APP}/Contents/MacOS/"
+
+            # Create Info.plist
+            cat > "${STAGE}/${APP}/Contents/Info.plist" << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleName</key>
+            <string>Floppy Explorer</string>
+            <key>CFBundleDisplayName</key>
+            <string>Floppy Explorer</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.floppy.explorer</string>
+            <key>CFBundleVersion</key>
+            <string>${VERSION}</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${VERSION}</string>
+            <key>CFBundleExecutable</key>
+            <string>floppy-explorer</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleIconFile</key>
+            <string>app</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>10.13</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          PLIST
+
+            # Zip the .app bundle
+            cd "${STAGE}"
+            zip -r "../floppy-explorer-mac-${ARCH}.zip" "Floppy Explorer.app"
+            cd ..
+          done
 
       - name: Package Windows x64
         run: |
-          cd dist/floppy-explorer
-          zip -r ../../floppy-explorer-win-x64.zip \
-            floppy-explorer-win_x64.exe \
-            resources.neu \
-            extensions/
-        working-directory: .
+          mkdir -p stage-win
+          cp dist/floppy-explorer/floppy-explorer-win_x64.exe stage-win/
+          cp dist/floppy-explorer/resources.neu stage-win/
+          cp -r dist/floppy-explorer/extensions stage-win/
+          cd stage-win
+          zip -r ../floppy-explorer-win-x64.zip .
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
