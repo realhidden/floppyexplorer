@@ -208,6 +208,44 @@ const server = http.createServer(async (req, res) => {
   const parsed = new URL(req.url, `http://${req.headers.host}`);
   const pathname = parsed.pathname;
 
+  // File download (binary - outside JSON API)
+  const dlMatch = pathname.match(/^\/api\/disk\/([^/]+)\/download$/);
+  if (dlMatch && req.method === 'GET') {
+    const diskName = decodeURIComponent(dlMatch[1]);
+    const query = Object.fromEntries(parsed.searchParams);
+    const cluster = parseInt(query.cluster);
+    const size = parseInt(query.size);
+    const filename = query.name || 'file.bin';
+
+    const loaded = loadDisk(diskName);
+    if (!loaded || loaded.error || loaded.disk.filesystem?.type !== 'FAT') {
+      res.writeHead(404);
+      res.end('Disk not found or not FAT');
+      return;
+    }
+    if (isNaN(cluster) || isNaN(size) || cluster < 2) {
+      res.writeHead(400);
+      res.end('Invalid cluster/size');
+      return;
+    }
+
+    const data = edsk.readFileData(loaded.buf, loaded.disk, loaded.disk.filesystem, cluster, size);
+    if (!data) {
+      res.writeHead(404);
+      res.end('Could not read file data');
+      return;
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${filename.replace(/"/g, '_')}"`,
+      'Content-Length': data.length,
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.end(data);
+    return;
+  }
+
   // API routes
   if (pathname.startsWith('/api/')) {
     const route = matchRoute(req.method, pathname);

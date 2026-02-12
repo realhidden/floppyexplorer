@@ -801,6 +801,35 @@ table.file-table {
   letter-spacing: 0.5px;
 }
 
+.sfn-alias {
+  display: block;
+  font-size: 9px;
+  color: var(--text-dim);
+  opacity: 0.6;
+  margin-top: 1px;
+}
+
+.dl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font-size: 14px;
+  color: var(--amber-dim);
+  text-decoration: none;
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.dl-btn:hover {
+  color: var(--amber);
+  background: rgba(255, 176, 0, 0.1);
+  text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+}
+
+.fdl { width: 30px; text-align: center; }
+
 .no-files {
   padding: 32px;
   text-align: center;
@@ -1583,6 +1612,10 @@ function renderHex(data) {
 }
 
 // ═══ File browser ═══
+function escHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 async function loadFiles(name) {
   try {
     const files = await api(`/api/disk/${encodeURIComponent(name)}/files`);
@@ -1594,7 +1627,7 @@ async function loadFiles(name) {
 
     let html = `<table class="file-table">
       <thead><tr>
-        <th>Name</th><th>Size</th><th>Date</th><th>Time</th><th>Attr</th>
+        <th>Name</th><th>Size</th><th>Date</th><th>Time</th><th>Attr</th><th></th>
       </tr></thead><tbody>`;
 
     for (const f of files) {
@@ -1607,12 +1640,24 @@ async function loadFiles(name) {
         f.isVolumeLabel ? 'V' : '-',
       ].join('');
 
+      // Show SFN as subtitle if LFN differs
+      const displayName = f.isVolumeLabel ? '[' + escHtml(f.name) + ']' : escHtml(f.name);
+      const sfnNote = (f.longName && f.shortName && f.shortName !== f.name)
+        ? `<span class="sfn-alias">${escHtml(f.shortName)}</span>` : '';
+
+      // Download link for regular files
+      const canDownload = !f.isDir && !f.isVolumeLabel && f.size > 0 && f.cluster >= 2;
+      const dlLink = canDownload
+        ? `<a class="dl-btn" href="${API}/api/disk/${encodeURIComponent(name)}/download?cluster=${f.cluster}&size=${f.size}&name=${encodeURIComponent(f.name)}" title="Save file">&#8681;</a>`
+        : '';
+
       html += `<tr>
-        <td class="${cls}">${f.isVolumeLabel ? '[' + f.name + ']' : f.name}</td>
+        <td class="${cls}">${displayName}${sfnNote}</td>
         <td class="fsize">${f.isDir || f.isVolumeLabel ? '' : formatSize(f.size)}</td>
         <td class="fdate">${f.date}</td>
         <td class="fdate">${f.time}</td>
         <td class="attr-flags">${attrs}</td>
+        <td class="fdl">${dlLink}</td>
       </tr>`;
     }
 
