@@ -3,6 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { execFile } = require('child_process');
 const { WebSocketServer } = require('ws');
 const edsk = require('./lib/edsk-parser');
 const gw = require('./lib/greaseweazle');
@@ -16,6 +17,33 @@ const insideApp = __dirname.includes('.app/');
 const DISKS_DIR = insideApp
   ? path.join(require('os').homedir(), 'Documents', 'Floppy Explorer')
   : path.join(__dirname, 'disks');
+
+// Native macOS file dialogs via osascript (Standard Additions — no tell block needed)
+function pickSaveFile(defaultName) {
+  return new Promise((resolve, reject) => {
+    const escaped = defaultName.replace(/["\\\n]/g, c => '\\' + c);
+    const script = `set f to POSIX path of (choose file name with prompt "Save as" default name "${escaped}" default location (path to downloads folder))`;
+    console.log('[save] Showing save dialog for:', defaultName);
+    execFile('/usr/bin/osascript', ['-e', script], { timeout: 120000 }, (err, stdout, stderr) => {
+      if (err) { console.log('[save] Dialog cancelled or error:', stderr || err.message); return reject(new Error('cancelled')); }
+      console.log('[save] User chose:', stdout.trim());
+      resolve(stdout.trim());
+    });
+  });
+}
+
+function pickFolder(prompt) {
+  return new Promise((resolve, reject) => {
+    const escaped = (prompt || 'Choose folder').replace(/["\\\n]/g, c => '\\' + c);
+    const script = `set f to POSIX path of (choose folder with prompt "${escaped}" default location (path to downloads folder))`;
+    console.log('[save] Showing folder dialog...');
+    execFile('/usr/bin/osascript', ['-e', script], { timeout: 120000 }, (err, stdout, stderr) => {
+      if (err) { console.log('[save] Dialog cancelled or error:', stderr || err.message); return reject(new Error('cancelled')); }
+      console.log('[save] User chose folder:', stdout.trim());
+      resolve(stdout.trim());
+    });
+  });
+}
 
 // Ensure disks directory exists
 if (!fs.existsSync(DISKS_DIR)) fs.mkdirSync(DISKS_DIR, { recursive: true });
@@ -150,6 +178,31 @@ const api = {
     return edsk.readFATDirectory(loaded.buf, loaded.disk, loaded.disk.filesystem);
   },
 
+  // Save a single file with native save dialog
+  'GET /api/disk/:name/save-file': async (params, query) => {
+    const loaded = loadDisk(params.name);
+    if (!loaded || loaded.error || loaded.disk.filesystem?.type !== 'FAT') {
+      return { status: 404, body: { error: 'Disk not found or not FAT' } };
+    }
+    const cluster = parseInt(query.cluster);
+    const size = parseInt(query.size);
+    const filename = query.name || 'file.bin';
+    if (isNaN(cluster) || isNaN(size) || cluster < 2) {
+      return { status: 400, body: { error: 'Invalid cluster/size' } };
+    }
+    const data = edsk.readFileData(loaded.buf, loaded.disk, loaded.disk.filesystem, cluster, size);
+    if (!data) return { status: 404, body: { error: 'Could not read file data' } };
+
+    let savePath;
+    try {
+      savePath = await pickSaveFile(path.basename(filename));
+    } catch {
+      return { cancelled: true };
+    }
+    fs.writeFileSync(savePath, data);
+    return { saved: true, path: savePath };
+  },
+
   // Greaseweazle device info
   'GET /api/gw/info': async () => {
     if (gw.isBusy()) return { connected: true, busy: true, note: 'Device busy — read in progress' };
@@ -170,6 +223,39 @@ const api = {
     } catch (e) {
       return { error: e.message };
     }
+  },
+
+  // Download all files from a FAT disk — show folder picker, save to chosen dir
+  'GET /api/disk/:name/download-all': async (params) => {
+    const loaded = loadDisk(params.name);
+    if (!loaded || loaded.error) return { status: 404, body: { error: 'Disk not found' } };
+    if (loaded.disk.filesystem?.type !== 'FAT') {
+      return { status: 400, body: { error: 'Not a FAT filesystem' } };
+    }
+
+    let dlDir;
+    try {
+      dlDir = await pickFolder('Save all disk files to...');
+    } catch {
+      return { cancelled: true };
+    }
+
+    const files = edsk.readFATDirectory(loaded.buf, loaded.disk, loaded.disk.filesystem);
+    let savedCount = 0;
+    for (const f of files) {
+      if (f.isDir || f.isVolumeLabel || f.size === 0 || f.cluster < 2) continue;
+      const data = edsk.readFileData(loaded.buf, loaded.disk, loaded.disk.filesystem, f.cluster, f.size);
+      if (!data) continue;
+
+      const filePath = f.path || f.name;
+      const savePath = path.join(dlDir, filePath);
+      const saveDir = path.dirname(savePath);
+      if (!fs.existsSync(saveDir)) fs.mkdirSync(saveDir, { recursive: true });
+      fs.writeFileSync(savePath, data);
+      savedCount++;
+    }
+
+    return { saved: true, count: savedCount, path: dlDir };
   },
 
   // Delete a disk image
