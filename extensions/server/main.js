@@ -9,10 +9,14 @@ const path = require('path');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
 const SERVER_PATH = path.join(PROJECT_ROOT, 'server.js');
+const NODE_BIN = process.execPath; // absolute path to the node binary running us
 
+console.log('[ext] Node binary:', NODE_BIN);
+console.log('[ext] Project root:', PROJECT_ROOT);
+console.log('[ext] Server path:', SERVER_PATH);
 console.log('[ext] Starting Node server...');
 
-const child = spawn('node', [SERVER_PATH], {
+const child = spawn(NODE_BIN, [SERVER_PATH], {
   cwd: PROJECT_ROOT,
   stdio: ['ignore', 'inherit', 'inherit'],
   env: { ...process.env, PORT: '3141' },

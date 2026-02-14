@@ -1,6 +1,6 @@
 {
   "name": "floppy-explorer",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "EDSK floppy disk image explorer with Greaseweazle integration",
   "main": "server.js",
   "scripts": {
