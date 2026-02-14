@@ -369,6 +369,61 @@ const api = {
     return { saved: true, count: savedCount, path: dlDir };
   },
 
+  // Cross-disk file search — returns all files (live + deleted) across all disks
+  'GET /api/search': () => {
+    const disksDir = getDisksDir();
+    if (!fs.existsSync(disksDir)) return { stats: { disks: 0, fatDisks: 0, files: 0, deleted: 0 }, files: [] };
+
+    const diskNames = fs.readdirSync(disksDir).filter(f => /\.(e?dsk|img|ima)$/i.test(f)).sort();
+    const allFiles = [];
+    let fatDisks = 0;
+
+    for (const name of diskNames) {
+      const loaded = loadDisk(name);
+      if (!loaded || loaded.error || loaded.disk?.filesystem?.type !== 'FAT') continue;
+      fatDisks++;
+
+      try {
+        const liveFiles = edsk.readFATDirectory(loaded.buf, loaded.disk, loaded.disk.filesystem);
+        for (const f of liveFiles) {
+          if (f.isDir || f.isVolumeLabel) continue;
+          allFiles.push({
+            disk: name,
+            name: f.path || f.name,
+            size: f.size,
+            date: f.date,
+            time: f.time,
+            cluster: f.cluster,
+            deleted: false,
+          });
+        }
+      } catch { /* skip */ }
+
+      try {
+        const deletedFiles = edsk.readDeletedFiles(loaded.buf, loaded.disk, loaded.disk.filesystem);
+        for (const f of deletedFiles) {
+          allFiles.push({
+            disk: name,
+            name: f.name,
+            size: f.size,
+            date: f.date,
+            time: f.time,
+            cluster: f.cluster,
+            deleted: true,
+            recoverable: f.recoverable || false,
+            reason: f.reason || undefined,
+          });
+        }
+      } catch { /* skip */ }
+    }
+
+    const deletedCount = allFiles.filter(f => f.deleted).length;
+    return {
+      stats: { disks: diskNames.length, fatDisks, files: allFiles.length - deletedCount, deleted: deletedCount },
+      files: allFiles,
+    };
+  },
+
   // Delete a disk image
   'DELETE /api/disk/:name': (params) => {
     const filePath = path.join(getDisksDir(), params.name);

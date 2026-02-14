@@ -123,6 +123,14 @@ body::after {
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-tools {
+  display: flex;
+  gap: 2px;
 }
 
 /* GW device panel */
@@ -1100,21 +1108,84 @@ table.file-table {
   background: none;
   border: none;
   color: var(--amber-dim);
-  font-size: 14px;
   cursor: pointer;
-  padding: 0 2px;
-  vertical-align: middle;
-  transition: color 0.15s, text-shadow 0.15s;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, filter 0.15s;
   line-height: 1;
 }
 .settings-btn:hover {
   color: var(--amber);
-  text-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
+  filter: drop-shadow(0 0 4px rgba(255, 176, 0, 0.5));
+}
+.settings-btn svg {
+  display: block;
+}
+
+/* ═══ Search view ═══ */
+.search-stats {
+  padding: 8px 16px;
+  font-size: 10px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.search-header input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-bright);
+  font-family: var(--font);
+  font-size: 11px;
+  outline: none;
+}
+
+.search-header input:focus {
+  border-color: var(--amber-dim);
+}
+
+.search-header input::placeholder {
+  color: var(--text-dim);
+}
+
+#search-result-count {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.search-disk-link {
+  color: var(--amber-dim);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.search-disk-link:hover {
+  color: var(--amber);
+  text-decoration: underline;
 }
 
 /* No-select on UI chrome */
 .logo-area, .gw-panel, .disk-list-header, .track-map-label,
-.sector-panel-header, .hex-panel-header, .tab-bar, #statusbar {
+.sector-panel-header, .hex-panel-header, .tab-bar, #statusbar,
+.search-stats, .search-header {
   user-select: none;
 }
 </style>
@@ -1125,8 +1196,14 @@ table.file-table {
   <!-- ═══ Sidebar ═══ -->
   <div id="sidebar">
     <div class="logo-area">
-      <div class="logo-title">Floppy Explorer <button class="settings-btn" onclick="openSettings()" title="Settings">&#9881;</button></div>
-      <div class="logo-sub">EDSK Image Analyzer</div>
+      <div class="logo-title">Floppy Explorer</div>
+      <div class="logo-sub">
+        <span>EDSK Image Analyzer</span>
+        <span class="logo-tools">
+          <button class="settings-btn" onclick="openSearch()" title="Search files"><svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="4.5"/><line x1="10" y1="10" x2="14" y2="14"/></svg></button>
+          <button class="settings-btn" onclick="openSettings()" title="Settings"><svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M6.5 1h3l.4 2.1a5.5 5.5 0 0 1 1.3.7L13.2 3l1.5 2.6-1.6 1.4a5.6 5.6 0 0 1 0 1.5l1.6 1.4-1.5 2.6-2-.8a5.5 5.5 0 0 1-1.3.7L9.5 15h-3l-.4-2.1a5.5 5.5 0 0 1-1.3-.7L2.8 13 1.3 10.4l1.6-1.4a5.6 5.6 0 0 1 0-1.5L1.3 6.1 2.8 3.5l2 .8a5.5 5.5 0 0 1 1.3-.7L6.5 1zM8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/></svg></button>
+        </span>
+      </div>
     </div>
 
     <div class="gw-panel">
@@ -1177,6 +1254,18 @@ table.file-table {
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-12.5c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 5.5c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg>
       <div class="msg">Select a disk image to explore</div>
       <div class="hint">or read a physical disk with Greaseweazle</div>
+    </div>
+
+    <!-- Search view -->
+    <div id="search-view" style="display:none;flex:1;min-height:0">
+      <div class="search-stats" id="search-stats"></div>
+      <div class="search-header">
+        <input type="text" id="search-input" placeholder="Search files across all disks..." oninput="filterSearch()">
+        <span id="search-result-count"></span>
+      </div>
+      <div class="file-browser" id="search-results" style="flex:1;overflow:auto;min-height:0">
+        <div class="no-files">Loading file index...</div>
+      </div>
     </div>
 
     <!-- Tab: Tracks -->
@@ -1265,7 +1354,7 @@ table.file-table {
     <label>Disk Images Directory</label>
     <div style="display:flex;gap:8px;align-items:center">
       <input type="text" id="cfg-disks-dir" readonly placeholder="Default" style="flex:1">
-      <button class="btn-primary" onclick="pickDisksDir()" style="flex-shrink:0">Browse</button>
+      <button class="btn-cancel" onclick="pickDisksDir()" style="flex-shrink:0">Browse</button>
       <button class="btn-cancel" onclick="resetDisksDir()" style="flex-shrink:0">Reset</button>
     </div>
     <div id="cfg-recent-dirs" style="margin-top:8px"></div>
@@ -1308,6 +1397,8 @@ const state = {
   reading: false,
   ws: null,
   ctxTarget: null,
+  searchIndex: null,
+  searchOpen: false,
 };
 
 // ═══ DOM refs ═══
@@ -1486,6 +1577,7 @@ function handleWSMessage(msg) {
       break;
 
     case 'disks-changed':
+      state.searchIndex = null;
       loadDiskList();
       break;
   }
@@ -1528,6 +1620,13 @@ function renderDiskList() {
 
 // ═══ Select disk ═══
 async function selectDisk(name) {
+  // Close search view if open
+  if (state.searchOpen) {
+    state.searchOpen = false;
+    $('#search-view').style.display = 'none';
+    $('#search-input').value = '';
+  }
+
   if (state.activeDisk === name && state.diskData) return;
   state.activeDisk = name;
   state.selectedTrack = null;
@@ -2163,9 +2262,142 @@ async function checkForUpdates() {
   }
 }
 
+// ═══ Search ═══
+async function openSearch() {
+  // Hide disk content
+  dom.diskHeader.classList.remove('visible');
+  dom.tabBar.classList.remove('visible');
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  dom.emptyState.style.display = 'none';
+
+  // Show search view
+  const sv = $('#search-view');
+  sv.style.display = 'flex';
+  sv.style.flexDirection = 'column';
+  state.searchOpen = true;
+
+  // Focus input
+  const input = $('#search-input');
+  input.focus();
+
+  // Fetch index if not cached
+  if (!state.searchIndex) {
+    $('#search-results').innerHTML = '<div class="no-files">Loading file index...</div>';
+    $('#search-stats').textContent = '';
+    try {
+      state.searchIndex = await api('/api/search');
+    } catch {
+      $('#search-results').innerHTML = '<div class="no-files">Failed to load file index</div>';
+      return;
+    }
+  }
+
+  // Render stats
+  const s = state.searchIndex.stats;
+  $('#search-stats').textContent = `${s.disks} disks \u00b7 ${s.fatDisks} with FAT \u00b7 ${s.files} files \u00b7 ${s.deleted} deleted`;
+
+  // Render initial results
+  filterSearch();
+}
+
+function closeSearch(navigatingToDisk) {
+  state.searchOpen = false;
+  $('#search-view').style.display = 'none';
+  $('#search-input').value = '';
+
+  if (navigatingToDisk) {
+    // selectDisk will handle showing the right view; clear activeDisk
+    // so selectDisk doesn't early-return if same disk was previously selected
+    state.activeDisk = null;
+    state.diskData = null;
+    return;
+  }
+
+  // Restore previous view
+  if (state.activeDisk && state.diskData) {
+    dom.diskHeader.classList.add('visible');
+    dom.tabBar.classList.add('visible');
+    const activeTab = $('.tab-btn.active');
+    if (activeTab) switchTab(activeTab.dataset.tab);
+  } else {
+    dom.emptyState.style.display = '';
+  }
+}
+
+function filterSearch() {
+  if (!state.searchIndex) return;
+  const query = ($('#search-input').value || '').toLowerCase().trim();
+  let files = state.searchIndex.files;
+  if (query) {
+    files = files.filter(f => f.name.toLowerCase().includes(query));
+  }
+  renderSearchResults(files);
+}
+
+function renderSearchResults(files) {
+  const total = files.length;
+  const MAX = 500;
+  const truncated = total > MAX;
+  const shown = truncated ? files.slice(0, MAX) : files;
+
+  $('#search-result-count').textContent = truncated
+    ? `${MAX} of ${total} matches`
+    : `${total} file${total !== 1 ? 's' : ''}`;
+
+  if (total === 0) {
+    $('#search-results').innerHTML = '<div class="no-files">No matching files</div>';
+    return;
+  }
+
+  let html = `<table class="file-table">
+    <thead><tr>
+      <th>Disk</th><th>Name</th><th>Size</th><th>Date</th><th>Status</th><th class="fdl"></th>
+    </tr></thead><tbody>`;
+
+  for (const f of shown) {
+    const escapedDisk = escHtml(f.disk).replace(/'/g, "\\'");
+    const escapedName = escHtml(f.name).replace(/'/g, "\\'");
+    const nameCls = f.deleted ? 'fdeleted' : 'fname';
+
+    let statusHtml = '';
+    let dlHtml = '';
+
+    if (f.deleted) {
+      if (f.recoverable) {
+        statusHtml = '<span class="recover-badge yes">Recoverable</span>';
+        dlHtml = `<button class="recover-btn" onclick="recoverFile('${escapedDisk}',${f.cluster},${f.size},'${escapedName}')" title="Recover file">&#8681;</button>`;
+      } else {
+        statusHtml = `<span class="recover-badge no" title="${escHtml(f.reason || '')}">${escHtml(f.reason || 'Lost')}</span>`;
+        dlHtml = '<button class="recover-btn" disabled title="Cannot recover">&#8681;</button>';
+      }
+    } else {
+      const canDl = f.size > 0 && f.cluster >= 2;
+      if (canDl) {
+        dlHtml = `<a class="dl-btn" href="#" onclick="saveFile('${escapedDisk}',${f.cluster},${f.size},'${escapedName}');return false;" title="Save file">&#8681;</a>`;
+      }
+    }
+
+    html += `<tr>
+      <td><a class="search-disk-link" onclick="closeSearch(true);selectDisk('${escapedDisk}')">${escHtml(f.disk)}</a></td>
+      <td class="${nameCls}">${escHtml(f.name)}</td>
+      <td class="fsize">${formatSize(f.size)}</td>
+      <td class="fdate">${f.date || ''} ${f.time || ''}</td>
+      <td>${statusHtml}</td>
+      <td class="fdl">${dlHtml}</td>
+    </tr>`;
+  }
+
+  html += '</tbody></table>';
+  if (truncated) {
+    html += `<div class="no-files">Showing ${MAX} of ${total} results</div>`;
+  }
+  $('#search-results').innerHTML = html;
+}
+
 // ═══ Keyboard shortcuts ═══
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
+    if (state.searchOpen) { closeSearch(); return; }
     dom.readModal.classList.remove('visible');
     $('#settings-modal').classList.remove('visible');
     dom.ctxMenu.classList.remove('visible');
