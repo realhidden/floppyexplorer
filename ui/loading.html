@@ -37,10 +37,18 @@
   <div class="title">FLOPPY EXPLORER</div>
   <div class="msg">Starting server...</div>
   <script>
+    const msg = document.querySelector('.msg');
+    const startedAt = Date.now();
+
     (function poll() {
       fetch('http://localhost:3141/api/disks')
         .then(r => { if (r.ok) window.location = 'http://localhost:3141'; else throw 0; })
-        .catch(() => setTimeout(poll, 300));
+        .catch(() => {
+          if (Date.now() - startedAt > 12000) {
+            msg.textContent = 'Backend did not start. This build may be missing the bundled runtime.';
+          }
+          setTimeout(poll, 300);
+        });
     })();
   </script>
 </body>

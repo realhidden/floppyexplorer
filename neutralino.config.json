@@ -20,9 +20,9 @@
   "extensions": [
     {
       "id": "js.floppy.server",
-      "commandDarwin": "node ${NL_PATH}/extensions/server/main.js",
-      "commandLinux": "node ${NL_PATH}/extensions/server/main.js",
-      "commandWindows": "node ${NL_PATH}/extensions/server/main.js"
+      "commandDarwin": "sh \"${NL_PATH}/extensions/server/launch.sh\"",
+      "commandLinux": "sh \"${NL_PATH}/extensions/server/launch.sh\"",
+      "commandWindows": "cmd /c \"\"${NL_PATH}\\extensions\\server\\launch.cmd\"\""
     }
   ],
   "modes": {

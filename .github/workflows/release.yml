@@ -32,6 +32,25 @@ jobs:
       - name: Build release
         run: neu build --release
 
+      - name: Download bundled Node runtimes
+        run: |
+          set -euxo pipefail
+          NODE_VERSION="v20.19.5"
+          NODE_DIST="https://nodejs.org/dist/${NODE_VERSION}"
+          mkdir -p runtime
+
+          curl -fsSL "${NODE_DIST}/node-${NODE_VERSION}-darwin-arm64.tar.gz" -o runtime/node-darwin-arm64.tar.gz
+          tar -xzf runtime/node-darwin-arm64.tar.gz -C runtime
+          mv "runtime/node-${NODE_VERSION}-darwin-arm64" runtime/node-darwin-arm64
+
+          curl -fsSL "${NODE_DIST}/node-${NODE_VERSION}-darwin-x64.tar.gz" -o runtime/node-darwin-x64.tar.gz
+          tar -xzf runtime/node-darwin-x64.tar.gz -C runtime
+          mv "runtime/node-${NODE_VERSION}-darwin-x64" runtime/node-darwin-x64
+
+          curl -fsSL "${NODE_DIST}/node-${NODE_VERSION}-win-x64.zip" -o runtime/node-win-x64.zip
+          unzip -q runtime/node-win-x64.zip -d runtime
+          mv "runtime/node-${NODE_VERSION}-win-x64" runtime/node-win-x64
+
       - name: Get version
         id: version
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
@@ -51,9 +70,24 @@ jobs:
             cp "${DIST}/floppy-explorer-mac_${ARCH}" "${STAGE}/${APP}/Contents/MacOS/floppy-explorer"
             chmod +x "${STAGE}/${APP}/Contents/MacOS/floppy-explorer"
 
-            # Copy resources and extensions alongside the binary
+            # Copy resources, backend files, and extensions alongside the binary
             cp "${DIST}/resources.neu" "${STAGE}/${APP}/Contents/MacOS/"
             cp -r "${DIST}/extensions" "${STAGE}/${APP}/Contents/MacOS/"
+            cp server.js "${STAGE}/${APP}/Contents/MacOS/"
+            cp package.json "${STAGE}/${APP}/Contents/MacOS/"
+            cp -r lib "${STAGE}/${APP}/Contents/MacOS/"
+            cp -r ui "${STAGE}/${APP}/Contents/MacOS/"
+            cp -r node_modules "${STAGE}/${APP}/Contents/MacOS/"
+            mkdir -p "${STAGE}/${APP}/Contents/MacOS/runtime"
+
+            if [ "${ARCH}" = "universal" ]; then
+              cp -r runtime/node-darwin-arm64 "${STAGE}/${APP}/Contents/MacOS/runtime/"
+              cp -r runtime/node-darwin-x64 "${STAGE}/${APP}/Contents/MacOS/runtime/"
+            elif [ "${ARCH}" = "arm64" ]; then
+              cp -r runtime/node-darwin-arm64 "${STAGE}/${APP}/Contents/MacOS/runtime/"
+            else
+              cp -r runtime/node-darwin-x64 "${STAGE}/${APP}/Contents/MacOS/runtime/"
+            fi
 
             # Copy app icon
             cp ui/app.icns "${STAGE}/${APP}/Contents/Resources/app.icns"
@@ -100,6 +134,13 @@ jobs:
           cp dist/floppy-explorer/floppy-explorer-win_x64.exe stage-win/
           cp dist/floppy-explorer/resources.neu stage-win/
           cp -r dist/floppy-explorer/extensions stage-win/
+          cp server.js stage-win/
+          cp package.json stage-win/
+          cp -r lib stage-win/
+          cp -r ui stage-win/
+          cp -r node_modules stage-win/
+          mkdir -p stage-win/runtime
+          cp -r runtime/node-win-x64 stage-win/runtime/
           cd stage-win
           zip -r ../floppy-explorer-win-x64.zip .
 
