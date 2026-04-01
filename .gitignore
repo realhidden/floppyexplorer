@@ -2,6 +2,7 @@ node_modules/
 disks/
 bin/
 dist/
+build/
 .DS_Store
 .claude/
 *.log

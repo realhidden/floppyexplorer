@@ -9,6 +9,7 @@ const edsk = require('./lib/edsk-parser');
 const gw = require('./lib/greaseweazle');
 
 const PORT = process.env.PORT || 3141;
+const APP_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
 const UI_DIR = path.join(__dirname, 'ui');
 
 // Config storage
@@ -33,10 +34,10 @@ function addRecentDir(cfg, dir) {
 
 // Use ~/Documents/Floppy Explorer/ when running inside a .app bundle,
 // otherwise use local disks/ for development
-const insideApp = __dirname.includes('.app/');
+const insideApp = APP_DIR.includes('.app/');
 const DEFAULT_DISKS_DIR = insideApp
   ? path.join(require('os').homedir(), 'Documents', 'Floppy Explorer')
-  : path.join(__dirname, 'disks');
+  : path.join(APP_DIR, 'disks');
 
 function getDisksDir() {
   return loadConfig().disksDir || DEFAULT_DISKS_DIR;

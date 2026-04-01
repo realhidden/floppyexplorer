@@ -3,10 +3,12 @@
   "version": "0.2.2",
   "description": "EDSK floppy disk image explorer with Greaseweazle integration",
   "main": "server.js",
+  "bin": "server.js",
   "scripts": {
     "start": "node server.js",
     "desktop": "neu run",
     "build": "neu build --release",
+    "build:backend:release": "sh ./scripts/build-backend-release.sh",
     "cli": "node edsk.js"
   },
   "keywords": [
@@ -18,5 +20,18 @@
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "scripts": [
+      "server.js",
+      "lib/**/*.js"
+    ],
+    "assets": [
+      "ui/**/*",
+      "package.json"
+    ]
   }
 }

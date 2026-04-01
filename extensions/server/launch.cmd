@@ -3,18 +3,18 @@ setlocal
 
 set "SCRIPT_DIR=%~dp0"
 set "APP_ROOT=%SCRIPT_DIR%..\.."
-set "NODE_BIN=%APP_ROOT%\runtime\node-win-x64\node.exe"
+set "BACKEND_BIN=%APP_ROOT%\backend\floppy-backend.exe"
 
-if exist "%NODE_BIN%" (
-  "%NODE_BIN%" "%SCRIPT_DIR%main.js"
+if exist "%BACKEND_BIN%" (
+  "%BACKEND_BIN%"
   exit /b %errorlevel%
 )
 
 where node >nul 2>nul
 if %errorlevel%==0 (
-  node "%SCRIPT_DIR%main.js"
+  node "%APP_ROOT%\server.js"
   exit /b %errorlevel%
 )
 
-echo [ext] No Node runtime found. Expected a bundled runtime under %APP_ROOT%\runtime or a system node in PATH. 1>&2
+echo [ext] No backend binary found under %APP_ROOT%\backend and no system node is available for development fallback. 1>&2
 exit /b 1

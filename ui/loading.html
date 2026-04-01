@@ -45,7 +45,7 @@
         .then(r => { if (r.ok) window.location = 'http://localhost:3141'; else throw 0; })
         .catch(() => {
           if (Date.now() - startedAt > 12000) {
-            msg.textContent = 'Backend did not start. This build may be missing the bundled runtime.';
+            msg.textContent = 'Backend did not start. This build may be incomplete.';
           }
           setTimeout(poll, 300);
         });
