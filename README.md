@@ -171,6 +171,14 @@ This resolves the errors:
 - *"Floppy Explorer.app" is damaged and can't be opened*
 - *Apple could not verify "Floppy Explorer.app" is free of malware*
 
+If the app opens but stays on the loading screen, macOS may still be blocking the bundled backend executable inside the app bundle. For affected builds, run:
+
+```bash
+codesign --force --sign - "/Applications/Floppy Explorer.app/Contents/MacOS/backend/floppy-backend"
+```
+
+Then start the app again.
+
 ---
 
 ## License

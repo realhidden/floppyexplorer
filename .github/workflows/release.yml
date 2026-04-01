@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
 
     steps:
       - uses: actions/checkout@v4
@@ -104,6 +104,10 @@ jobs:
           </dict>
           </plist>
           PLIST
+
+            # Ad-hoc sign nested executables, then sign the bundle so macOS can launch the backend
+            find "${STAGE}/${APP}/Contents/MacOS" -type f \( -name "floppy-explorer" -o -name "floppy-backend" -o -name "floppy-backend-arm64" -o -name "floppy-backend-x64" \) -exec codesign --force --sign - {} \;
+            codesign --force --deep --sign - "${STAGE}/${APP}"
 
             # Zip the .app bundle
             cd "${STAGE}"
