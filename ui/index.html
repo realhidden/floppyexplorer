@@ -355,6 +355,82 @@ body::after {
 
 .upload-zone input { display: none; }
 
+/* Sync badges */
+.sync-badges {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 4px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  border-radius: 2px;
+  line-height: 1.4;
+}
+
+.sync-badge.local {
+  background: rgba(68, 204, 102, 0.12);
+  color: var(--green);
+}
+
+.sync-badge.remote {
+  background: rgba(100, 140, 255, 0.12);
+  color: #6699FF;
+}
+
+.sync-badge.syncing {
+  background: rgba(255, 176, 0, 0.12);
+  color: var(--amber);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.sync-badge.synced {
+  background: rgba(68, 204, 102, 0.08);
+  color: var(--green-dim);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.sync-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.sync-action-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 1px 4px;
+  font-size: 8px;
+  font-family: var(--font);
+  line-height: 1.4;
+  transition: all 0.15s;
+}
+
+.sync-action-btn:hover:not(:disabled) {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-ghost);
+}
+
+.sync-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* ═══ Main area ═══ */
 #main {
   display: flex;
@@ -973,6 +1049,16 @@ table.file-table {
 .btn-cancel {
   background: var(--bg);
   color: var(--text-dim);
+  padding: 6px 14px;
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
 }
 
 .btn-cancel:hover { background: var(--bg-hover); color: var(--text); }
@@ -1343,6 +1429,11 @@ table.file-table {
 <!-- Context menu -->
 <div class="ctx-menu" id="ctx-menu">
   <div class="ctx-menu-item" id="ctx-reload">Reload</div>
+  <div class="ctx-menu-item" id="ctx-upload">Upload to Cloud</div>
+  <div class="ctx-menu-item" id="ctx-download">Download from Cloud</div>
+  <div class="ctx-menu-item" id="ctx-delete-local">Delete Local Only</div>
+  <div class="ctx-menu-item" id="ctx-delete-remote">Delete Cloud Only</div>
+  <div class="ctx-menu-item" id="ctx-delete-both">Delete Both</div>
   <div class="ctx-menu-item danger" id="ctx-delete">Delete</div>
 </div>
 
@@ -1358,6 +1449,63 @@ table.file-table {
       <button class="btn-cancel" onclick="resetDisksDir()" style="flex-shrink:0">Reset</button>
     </div>
     <div id="cfg-recent-dirs" style="margin-top:8px"></div>
+
+    <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:12px">
+       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+         <label style="margin:0;font-size:11px;letter-spacing:0.5px;text-transform:uppercase;color:var(--text)">Cloud Sync</label>
+         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px">
+           <span>Enable</span>
+           <div id="cfg-sync-toggle" style="width:36px;height:20px;border-radius:10px;background:var(--border);cursor:pointer;position:relative;transition:background 0.15s;flex-shrink:0">
+             <div style="width:16px;height:16px;border-radius:50%;background:var(--text-dim);position:absolute;top:2px;left:2px;transition:all 0.15s"></div>
+           </div>
+           <input type="checkbox" id="cfg-sync-enabled" style="display:none">
+         </label>
+       </div>
+       <div id="s3-fields" style="opacity:0.4;pointer-events:none;transition:opacity 0.2s">
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+           <div>
+             <label style="font-size:10px;color:var(--text-dim);margin-bottom:3px;display:block">Endpoint URL</label>
+             <input type="text" id="cfg-s3-endpoint" placeholder="http://localhost:9000" style="width:100%;padding:6px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:3px;color:var(--text-bright);font-family:var(--font);font-size:11px;outline:none">
+           </div>
+           <div>
+             <label style="font-size:10px;color:var(--text-dim);margin-bottom:3px;display:block">Bucket</label>
+             <input type="text" id="cfg-s3-bucket" placeholder="my-bucket" style="width:100%;padding:6px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:3px;color:var(--text-bright);font-family:var(--font);font-size:11px;outline:none">
+           </div>
+         </div>
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+           <div>
+             <label style="font-size:10px;color:var(--text-dim);margin-bottom:3px;display:block">Region</label>
+             <input type="text" id="cfg-s3-region" placeholder="us-east-1" style="width:100%;padding:6px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:3px;color:var(--text-bright);font-family:var(--font);font-size:11px;outline:none">
+           </div>
+           <div>
+             <label style="font-size:10px;color:var(--text-dim);margin-bottom:3px;display:block">Key Prefix</label>
+             <input type="text" id="cfg-s3-prefix" placeholder="floppy-explorer/" style="width:100%;padding:6px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:3px;color:var(--text-bright);font-family:var(--font);font-size:11px;outline:none">
+           </div>
+         </div>
+         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+           <div>
+             <label style="font-size:10px;color:var(--text-dim);margin-bottom:3px;display:block">Access Key ID</label>
+             <input type="text" id="cfg-s3-access-key" placeholder="AKIA..." style="width:100%;padding:6px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:3px;color:var(--text-bright);font-family:var(--font);font-size:11px;outline:none">
+           </div>
+           <div>
+             <label style="font-size:10px;color:var(--text-dim);margin-bottom:3px;display:block">Secret Access Key</label>
+             <input type="password" id="cfg-s3-secret-key" placeholder="••••••••" style="width:100%;padding:6px 10px;background:var(--bg-deep);border:1px solid var(--border);border-radius:3px;color:var(--text-bright);font-family:var(--font);font-size:11px;outline:none">
+           </div>
+         </div>
+         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px">
+             <div id="cfg-pathstyle-toggle" style="width:36px;height:20px;border-radius:10px;background:var(--border);cursor:pointer;position:relative;transition:background 0.15s;flex-shrink:0">
+               <div style="width:16px;height:16px;border-radius:50%;background:var(--text-dim);position:absolute;top:2px;left:2px;transition:all 0.15s"></div>
+             </div>
+             <input type="checkbox" id="cfg-s3-path-style" style="display:none">
+             <span>Path-style URLs</span>
+           </label>
+           <span style="font-size:10px;color:var(--text-dim)">MinIO, Cloudflare R2, etc.</span>
+         </div>
+         <button class="btn-cancel" onclick="saveS3Config()" style="width:100%;background:linear-gradient(180deg, rgba(255,176,0,0.12), rgba(255,176,0,0.06));border-color:var(--amber-dim);color:var(--amber)">Save Cloud Settings</button>
+         <div id="cfg-s3-status" style="margin-top:8px;font-size:10px;text-align:center;min-height:14px"></div>
+       </div>
+     </div>
 
     <div style="border-top:1px solid var(--border);margin-top:16px;padding-top:12px">
       <label>About</label>
@@ -1440,6 +1588,11 @@ const dom = {
   readStart: $('#read-start'),
   ctxMenu: $('#ctx-menu'),
   ctxReload: $('#ctx-reload'),
+  ctxUpload: $('#ctx-upload'),
+  ctxDownload: $('#ctx-download'),
+  ctxDeleteLocal: $('#ctx-delete-local'),
+  ctxDeleteRemote: $('#ctx-delete-remote'),
+  ctxDeleteBoth: $('#ctx-delete-both'),
   ctxDelete: $('#ctx-delete'),
 };
 
@@ -1596,7 +1749,33 @@ async function loadDiskList() {
 function renderDiskList() {
   dom.diskCount.textContent = state.disks.length;
 
-  dom.diskList.innerHTML = state.disks.map(d => `
+  dom.diskList.innerHTML = state.disks.map(d => {
+    const syncHtml = d.local || d.remote ? `
+      <div class="sync-badges">
+        ${d.local ? '<span class="sync-badge local">LOCAL</span>' : ''}
+        ${d.remote ? '<span class="sync-badge remote">CLOUD</span>' : ''}
+        ${d.synced ? '<span class="sync-badge synced">✓</span>' : ''}
+        ${d.syncing === 'upload' ? '<span class="sync-badge syncing">↑ UP</span>' : ''}
+        ${d.syncing === 'download' ? '<span class="sync-badge syncing">↓ DOWN</span>' : ''}
+      </div>
+    ` : '';
+
+    const actionBtns = d.local && d.remote ? `
+      <div class="sync-actions">
+        <button class="sync-action-btn" onclick="event.stopPropagation();uploadDisk('${d.name}')" title="Upload to cloud">↑</button>
+        <button class="sync-action-btn" onclick="event.stopPropagation();downloadDisk('${d.name}')" title="Download from cloud">↓</button>
+      </div>
+    ` : d.local ? `
+      <div class="sync-actions">
+        <button class="sync-action-btn" onclick="event.stopPropagation();uploadDisk('${d.name}')" title="Upload to cloud">↑</button>
+      </div>
+    ` : d.remote ? `
+      <div class="sync-actions">
+        <button class="sync-action-btn" onclick="event.stopPropagation();downloadDisk('${d.name}')" title="Download from cloud">↓</button>
+      </div>
+    ` : '';
+
+    return `
     <div class="disk-item${state.activeDisk === d.name ? ' active' : ''}"
          data-name="${d.name}"
          oncontextmenu="showCtxMenu(event, '${d.name}')">
@@ -1608,10 +1787,13 @@ function renderDiskList() {
         <div class="disk-meta">
           ${formatSize(d.size)}
           ${d.format ? `<div class="disk-badge">${d.format}</div>` : d.valid === false ? '<div class="disk-badge" style="color:var(--red)">ERR</div>' : ''}
+          ${syncHtml}
         </div>
       </div>
+      ${actionBtns}
     </div>
-  `).join('');
+    `;
+  }).join('');
 
   dom.diskList.querySelectorAll('.disk-item').forEach(el => {
     el.addEventListener('click', () => selectDisk(el.dataset.name));
@@ -2128,6 +2310,17 @@ window.showCtxMenu = function(e, name) {
   dom.ctxMenu.style.left = e.clientX + 'px';
   dom.ctxMenu.style.top = e.clientY + 'px';
   dom.ctxMenu.classList.add('visible');
+
+  const disk = (state.diskList || []).find(d => d.name === name);
+  const hasRemote = disk && disk.remote;
+  const hasLocal = disk && disk.local;
+  const hasBoth = disk && disk.local && disk.remote;
+
+  $('#ctx-upload').style.display = hasLocal ? '' : 'none';
+  $('#ctx-download').style.display = hasRemote ? '' : 'none';
+  $('#ctx-delete-local').style.display = hasLocal ? '' : 'none';
+  $('#ctx-delete-remote').style.display = hasRemote ? '' : 'none';
+  $('#ctx-delete-both').style.display = hasBoth ? '' : 'none';
 };
 
 document.addEventListener('click', () => {
@@ -2159,14 +2352,235 @@ dom.ctxDelete.addEventListener('click', async () => {
   }
 });
 
+// ═══ Sync actions ═══
+dom.ctxUpload.addEventListener('click', async () => {
+  if (!state.ctxTarget) return;
+  try {
+    setStatus(`Uploading ${state.ctxTarget}...`);
+    const res = await fetch(API + `/api/disk/${encodeURIComponent(state.ctxTarget)}/upload`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setStatus(`Uploaded ${state.ctxTarget}`);
+    loadDiskList();
+  } catch (e) {
+    setStatus(`Upload failed: ${e.message}`);
+  }
+});
+
+dom.ctxDownload.addEventListener('click', async () => {
+  if (!state.ctxTarget) return;
+  try {
+    setStatus(`Downloading ${state.ctxTarget}...`);
+    const res = await fetch(API + `/api/disk/${encodeURIComponent(state.ctxTarget)}/download`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setStatus(`Downloaded ${state.ctxTarget}`);
+    loadDiskList();
+  } catch (e) {
+    setStatus(`Download failed: ${e.message}`);
+  }
+});
+
+dom.ctxDeleteLocal.addEventListener('click', async () => {
+  if (!state.ctxTarget) return;
+  if (!confirm(`Delete ${state.ctxTarget} from local storage only?`)) return;
+  try {
+    await fetch(API + `/api/disk/${encodeURIComponent(state.ctxTarget)}/local`, { method: 'DELETE' });
+    if (state.activeDisk === state.ctxTarget) {
+      state.activeDisk = null;
+      state.diskData = null;
+      dom.diskHeader.classList.remove('visible');
+      dom.tabBar.classList.remove('visible');
+      $$('.tab-content').forEach(c => c.classList.remove('active'));
+      dom.emptyState.style.display = '';
+    }
+    loadDiskList();
+    setStatus(`Deleted local copy of ${state.ctxTarget}`);
+  } catch (e) {
+    setStatus(`Delete local failed: ${e.message}`);
+  }
+});
+
+dom.ctxDeleteRemote.addEventListener('click', async () => {
+  if (!state.ctxTarget) return;
+  if (!confirm(`Delete ${state.ctxTarget} from cloud only?`)) return;
+  try {
+    await fetch(API + `/api/disk/${encodeURIComponent(state.ctxTarget)}/remote`, { method: 'DELETE' });
+    loadDiskList();
+    setStatus(`Deleted cloud copy of ${state.ctxTarget}`);
+  } catch (e) {
+    setStatus(`Delete remote failed: ${e.message}`);
+  }
+});
+
+dom.ctxDeleteBoth.addEventListener('click', async () => {
+  if (!state.ctxTarget) return;
+  if (!confirm(`Delete ${state.ctxTarget} from both local and cloud?`)) return;
+  try {
+    await fetch(API + `/api/disk/${encodeURIComponent(state.ctxTarget)}`, { method: 'DELETE' });
+    if (state.activeDisk === state.ctxTarget) {
+      state.activeDisk = null;
+      state.diskData = null;
+      dom.diskHeader.classList.remove('visible');
+      dom.tabBar.classList.remove('visible');
+      $$('.tab-content').forEach(c => c.classList.remove('active'));
+      dom.emptyState.style.display = '';
+    }
+    loadDiskList();
+    setStatus(`Deleted ${state.ctxTarget} from both locations`);
+  } catch (e) {
+    setStatus(`Delete failed: ${e.message}`);
+  }
+});
+
+// ═══ Cloud sync helper functions ═══
+async function uploadDisk(name) {
+  try {
+    setStatus(`Uploading ${name}...`);
+    const res = await fetch(API + `/api/disk/${encodeURIComponent(name)}/upload`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setStatus(`Uploaded ${name}`);
+    loadDiskList();
+  } catch (e) {
+    setStatus(`Upload failed: ${e.message}`);
+  }
+}
+
+async function downloadDisk(name) {
+  try {
+    setStatus(`Downloading ${name}...`);
+    const res = await fetch(API + `/api/disk/${encodeURIComponent(name)}/download`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    setStatus(`Downloaded ${name}`);
+    loadDiskList();
+  } catch (e) {
+    setStatus(`Download failed: ${e.message}`);
+  }
+}
+
 // ═══ Settings ═══
+function setupToggle(toggleId, inputId, onColor, fieldId) {
+  const toggle = $(`#${toggleId}`);
+  const input = $(`#${inputId}`);
+  toggle.addEventListener('click', (e) => {
+    const desired = !input.checked;
+    // Defer the toggle so the label's native re-toggle doesn't undo it
+    requestAnimationFrame(() => {
+      input.checked = desired;
+      const dot = toggle.querySelector('div');
+      if (input.checked) {
+        toggle.style.background = onColor || 'var(--amber)';
+        dot.style.left = '18px';
+        dot.style.background = '#fff';
+      } else {
+        toggle.style.background = 'var(--border)';
+        dot.style.left = '2px';
+        dot.style.background = 'var(--text-dim)';
+      }
+      if (fieldId) {
+        $(`#${fieldId}`).style.opacity = input.checked ? '1' : '0.4';
+        $(`#${fieldId}`).style.pointerEvents = input.checked ? 'auto' : 'none';
+      }
+    });
+  });
+}
+setupToggle('cfg-sync-toggle', 'cfg-sync-enabled', 'var(--amber)', 's3-fields');
+setupToggle('cfg-pathstyle-toggle', 'cfg-s3-path-style');
+
 async function openSettings() {
+  const modal = $('#settings-modal');
+  modal.classList.add('visible');
+  if (state.settingsLoaded) return;
+  state.settingsLoaded = true;
+
+  try {
+    const cfg = await api('/api/config');
+    $('#cfg-disks-dir').value = cfg.disksDir || '';
+    $('#cfg-version').textContent = cfg.version || '?';
+    $('#cfg-update-status').textContent = '';
+    renderRecentDirs(cfg.recentDirs || [], cfg.disksDir);
+
+    const s3 = cfg.s3 || {};
+    const syncOn = !!s3.endpoint && !!s3.bucket;
+    $('#cfg-sync-enabled').checked = syncOn;
+    refreshToggle('cfg-sync-toggle', syncOn, 'var(--amber)');
+    $('#s3-fields').style.opacity = syncOn ? '1' : '0.4';
+    $('#s3-fields').style.pointerEvents = syncOn ? 'auto' : 'none';
+
+    const psOn = !!s3.pathStyle;
+    $('#cfg-s3-path-style').checked = psOn;
+    refreshToggle('cfg-pathstyle-toggle', psOn);
+
+    $('#cfg-s3-endpoint').value = s3.endpoint || '';
+    $('#cfg-s3-bucket').value = s3.bucket || '';
+    $('#cfg-s3-region').value = s3.region || 'us-east-1';
+    $('#cfg-s3-access-key').value = s3.accessKeyId || '';
+    $('#cfg-s3-secret-key').value = s3.secretAccessKey || '';
+    $('#cfg-s3-prefix').value = s3.prefix || '';
+    $('#cfg-s3-status').textContent = '';
+    $('#cfg-s3-status').style.color = '';
+  } catch (e) {
+    $('#cfg-version').textContent = 'Error: ' + e.message;
+  }
+}
+
+function refreshToggle(toggleId, checked, onColor) {
+  const toggle = $(`#${toggleId}`);
+  const dot = toggle.querySelector('div');
+  if (!toggle || !dot) return;
+  if (checked) {
+    toggle.style.background = onColor || 'var(--amber)';
+    dot.style.left = '18px';
+    dot.style.background = '#fff';
+  } else {
+    toggle.style.background = 'var(--border)';
+    dot.style.left = '2px';
+    dot.style.background = 'var(--text-dim)';
+  }
+}
+
+async function saveS3Config() {
   const cfg = await api('/api/config');
-  $('#cfg-disks-dir').value = cfg.disksDir || '';
-  $('#cfg-version').textContent = cfg.version || '?';
-  $('#cfg-update-status').textContent = '';
-  renderRecentDirs(cfg.recentDirs || [], cfg.disksDir);
-  $('#settings-modal').classList.add('visible');
+  const enabled = $('#cfg-sync-enabled').checked;
+
+  if (enabled) {
+    cfg.s3 = {
+      endpoint: ($('#cfg-s3-endpoint').value || '').trim(),
+      bucket: ($('#cfg-s3-bucket').value || '').trim(),
+      region: ($('#cfg-s3-region').value || '').trim() || 'us-east-1',
+      accessKeyId: ($('#cfg-s3-access-key').value || '').trim(),
+      secretAccessKey: ($('#cfg-s3-secret-key').value || '').trim(),
+      prefix: ($('#cfg-s3-prefix').value || '').trim(),
+      pathStyle: $('#cfg-s3-path-style').checked,
+    };
+  } else {
+    delete cfg.s3;
+  }
+
+  delete cfg.version;
+
+  try {
+    await fetch(API + '/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cfg),
+    });
+    const statusEl = $('#cfg-s3-status');
+    if (enabled) {
+      statusEl.textContent = 'Cloud sync enabled';
+      statusEl.style.color = 'var(--green)';
+    } else {
+      statusEl.textContent = 'Cloud sync disabled';
+      statusEl.style.color = 'var(--text-dim)';
+    }
+    loadDiskList();
+  } catch (e) {
+    const statusEl = $('#cfg-s3-status');
+    statusEl.textContent = 'Save failed: ' + e.message;
+    statusEl.style.color = 'var(--red)';
+  }
 }
 
 function renderRecentDirs(dirs, current) {
