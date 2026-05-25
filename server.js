@@ -6,6 +6,7 @@ const path = require('path');
 const { execFile } = require('child_process');
 const { WebSocketServer } = require('ws');
 const edsk = require('./lib/edsk-parser');
+const { getMissingSectors } = edsk;
 const gw = require('./lib/greaseweazle');
 
 const PORT = process.env.PORT || 3141;
@@ -220,6 +221,85 @@ const api = {
       return { status: 400, body: { error: 'Not a FAT filesystem' } };
     }
     return edsk.readDeletedFiles(loaded.buf, loaded.disk, loaded.disk.filesystem);
+  },
+
+  // Disk health analysis
+  'GET /api/disk/:name/health': (params) => {
+    const loaded = loadDisk(params.name);
+    if (!loaded || loaded.error) return { status: 404, body: { error: 'Disk not found' } };
+
+    const { disk } = loaded;
+
+    // Calculate expected total sectors: tracks * sides * sectorsPerTrack
+    const sectorsPerTrack = disk.trackIndex[0]?.sectorCount || 18;
+    const expectedSectors = disk.tracks * disk.sides * sectorsPerTrack;
+    let totalErrors = 0;
+    let totalTruncated = 0;
+    let totalMissing = 0;
+    let totalSectors = 0;
+    const trackHealth = [];
+
+    // Get sectors with null dataOffset (unreadable due to truncation or corruption)
+    const missingDataSectors = getMissingSectors(disk);
+
+    for (const t of disk.trackIndex) {
+      const sectors = t.sectors || [];
+      const errCount = sectors.filter(s => s.hasError).length;
+      const truncCount = sectors.filter(s => s.truncated).length;
+      const missingSectors = (t.sectorCount || 0) - sectors.length;
+
+      totalSectors += sectors.length;
+
+      if (t.missing) {
+        totalMissing += sectorsPerTrack;
+      }
+
+      totalErrors += errCount;
+      totalTruncated += truncCount;
+
+      // Health score: 0-100 per track
+      const total = t.sectorCount || sectorsPerTrack;
+      const bad = errCount + truncCount + missingSectors + (t.missing ? sectorsPerTrack : 0);
+      const score = total > 0 ? Math.round(((total - bad) / total) * 100) : 0;
+
+      trackHealth.push({
+        track: t.track,
+        side: t.side,
+        total: total,
+        errors: errCount,
+        truncated: truncCount,
+        missing: missingSectors + (t.missing ? sectorsPerTrack : 0),
+        score,
+      });
+    }
+
+    // Count sectors with null dataOffset as missing
+    totalMissing += missingDataSectors.length;
+
+    // Overall score
+    const badCount = totalErrors + totalTruncated + totalMissing;
+    const overallScore = expectedSectors > 0 ? Math.round(((expectedSectors - badCount) / expectedSectors) * 100) : 0;
+
+    return {
+      score: overallScore,
+      totalSectors,
+      expectedSectors,
+      errors: totalErrors,
+      truncated: totalTruncated,
+      missing: totalMissing,
+      trackHealth,
+    };
+  },
+
+  // Export disk as raw image file
+  'GET /api/disk/:name/export': (params) => {
+    const loaded = loadDisk(params.name);
+    if (!loaded || loaded.error) return { status: 404, body: { error: 'Disk not found' } };
+
+    return {
+      size: loaded.buf.length,
+      base64: loaded.buf.toString('base64'),
+    };
   },
 
   // Recover a deleted file with native save dialog

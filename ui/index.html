@@ -526,6 +526,160 @@ body::after {
   color: var(--text-dim);
 }
 
+.export-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 10px;
+  font-family: var(--font);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.export-btn:hover {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-ghost);
+}
+
+/* ═══ Health view ═══ */
+.health-view {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+}
+
+.health-loading {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 40px;
+  font-size: 12px;
+}
+
+.health-summary {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.health-score-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 4px solid;
+}
+
+.health-score-circle.excellent {
+  border-color: #44cc66;
+  color: #44cc66;
+  background: rgba(68, 204, 102, 0.06);
+}
+
+.health-score-circle.good {
+  border-color: #88cc44;
+  color: #88cc44;
+  background: rgba(136, 204, 68, 0.06);
+}
+
+.health-score-circle.fair {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: rgba(255, 176, 0, 0.06);
+}
+
+.health-score-circle.poor {
+  border-color: #cc6644;
+  color: #cc6644;
+  background: rgba(204, 102, 68, 0.06);
+}
+
+.health-score-circle.bad {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(220, 50, 50, 0.06);
+}
+
+.health-stats {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.health-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.health-stat-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.health-stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.health-stat-value.error { color: var(--red); }
+.health-stat-value.warning { color: var(--amber); }
+
+.health-track-list {
+  margin-top: 16px;
+}
+
+.health-track-list h4 {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.health-track-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.health-track-cell {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 600;
+  cursor: default;
+  position: relative;
+}
+
+.health-track-cell.excellent { background: rgba(68, 204, 102, 0.15); color: #44cc66; }
+.health-track-cell.good { background: rgba(136, 204, 68, 0.12); color: #88cc44; }
+.health-track-cell.fair { background: rgba(255, 176, 0, 0.12); color: var(--amber); }
+.health-track-cell.poor { background: rgba(204, 102, 68, 0.12); color: #cc6644; }
+.health-track-cell.bad { background: rgba(220, 50, 50, 0.12); color: var(--red); }
+.health-track-cell.missing { background: rgba(100, 100, 100, 0.1); color: var(--text-dim); }
+
 /* Tab bar */
 .tab-bar {
   display: none;
@@ -611,13 +765,31 @@ body::after {
 }
 
 .track-cell {
-  width: 13px;
-  height: 13px;
-  border-radius: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.12s;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 600;
 }
+
+.track-pct {
+  position: absolute;
+  font-size: 7px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.track-pct.excellent { color: #44cc66; }
+.track-pct.good { color: #88cc44; }
+.track-pct.fair { color: var(--amber); }
+.track-pct.poor { color: #cc6644; }
+.track-pct.bad { color: var(--red); }
 
 .track-cell.ok { background: var(--green-dim); }
 .track-cell.ok:hover { background: var(--green); box-shadow: 0 0 6px rgba(68, 204, 102, 0.5); }
@@ -626,6 +798,7 @@ body::after {
 .track-cell.bad { background: var(--red-dim); }
 .track-cell.bad:hover { background: var(--red); box-shadow: 0 0 6px rgba(204, 68, 68, 0.5); }
 .track-cell.missing { background: var(--bg-surface); opacity: 0.4; cursor: default; }
+.track-cell.no-data { background: var(--bg-surface); opacity: 0.6; cursor: default; }
 .track-cell.selected {
   outline: 2px solid var(--amber);
   outline-offset: 1px;
@@ -1046,6 +1219,13 @@ table.file-table {
   transition: all 0.15s;
 }
 
+.s3-hint {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-left: auto;
+  padding-left: 12px;
+}
+
 .btn-cancel {
   background: var(--bg);
   color: var(--text-dim);
@@ -1325,6 +1505,7 @@ table.file-table {
     <div class="disk-header" id="disk-header">
       <span class="dh-name" id="dh-name"></span>
       <div class="dh-tags" id="dh-tags"></div>
+      <button class="export-btn" id="export-btn" title="Export disk image">⬇ Export</button>
       <div class="dh-spacer"></div>
       <span class="dh-creator" id="dh-creator"></span>
     </div>
@@ -1356,6 +1537,8 @@ table.file-table {
 
     <!-- Tab: Tracks -->
     <div class="tab-content active" id="tab-tracks">
+      <!-- Health summary (shown when health data is loaded) -->
+      <div class="health-summary" id="health-summary" style="display:none;"></div>
       <div class="track-map-container">
         <div class="track-map-wrap" id="track-map-wrap"></div>
 
@@ -1498,9 +1681,8 @@ table.file-table {
                <div style="width:16px;height:16px;border-radius:50%;background:var(--text-dim);position:absolute;top:2px;left:2px;transition:all 0.15s"></div>
              </div>
              <input type="checkbox" id="cfg-s3-path-style" style="display:none">
-             <span>Path-style URLs</span>
+             <span>Bucket in path, not subdomain</span>
            </label>
-           <span style="font-size:10px;color:var(--text-dim)">MinIO, Cloudflare R2, etc.</span>
          </div>
          <button class="btn-cancel" onclick="saveS3Config()" style="width:100%;background:linear-gradient(180deg, rgba(255,176,0,0.12), rgba(255,176,0,0.06));border-color:var(--amber-dim);color:var(--amber)">Save Cloud Settings</button>
          <div id="cfg-s3-status" style="margin-top:8px;font-size:10px;text-align:center;min-height:14px"></div>
@@ -1567,6 +1749,7 @@ const dom = {
   dhName: $('#dh-name'),
   dhTags: $('#dh-tags'),
   dhCreator: $('#dh-creator'),
+  exportBtn: $('#export-btn'),
   tabBar: $('#tab-bar'),
   emptyState: $('#empty-state'),
   tabTracks: $('#tab-tracks'),
@@ -1577,6 +1760,7 @@ const dom = {
   hexSectorId: $('#hex-sector-id'),
   hexViewer: $('#hex-viewer'),
   fileBrowser: $('#file-browser'),
+  healthView: $('#health-view'),
   statusMsg: $('#status-msg'),
   statusStats: $('#status-stats'),
   readModal: $('#read-modal'),
@@ -1813,6 +1997,7 @@ async function selectDisk(name) {
   state.activeDisk = name;
   state.selectedTrack = null;
   state.selectedSector = null;
+  healthData = null;
 
   renderDiskList();
   setStatus(`Loading ${name}...`);
@@ -1848,6 +2033,12 @@ async function selectDisk(name) {
   dom.tabBar.querySelectorAll('.tab-btn')[1].style.display = hasFiles ? '' : 'none';
   dom.tabBar.querySelectorAll('.tab-btn')[2].style.display = hasFiles ? '' : 'none';
 
+  // Export button
+  dom.exportBtn.style.display = '';
+
+  // Load health data
+  loadHealthData(name);
+
   // Track map
   renderTrackMap(d);
 
@@ -1882,7 +2073,7 @@ async function selectDisk(name) {
 }
 
 // ═══ Track map ═══
-function renderTrackMap(d) {
+function renderTrackMap(d, h) {
   let html = '<div class="track-map-label">Track Map</div>';
 
   for (let side = 0; side < d.sides; side++) {
@@ -1893,6 +2084,11 @@ function renderTrackMap(d) {
       const t = d.trackIndex.find(x => x.track === track && x.side === side);
       let cls = 'missing';
       let title = `T${track} S${side}`;
+      let pct = '';
+
+      // Get health data for this track
+      const th = h?.trackHealth?.find(tr => tr.track === track && tr.side === side);
+      const score = th?.score ?? (t?.missing ? 0 : 100);
 
       if (t && !t.missing) {
         const hasErrors = t.sectors?.some(s => s.hasError);
@@ -1903,12 +2099,23 @@ function renderTrackMap(d) {
         } else if (hasErrors) {
           cls = 'error';
           title += ' [errors]';
+        } else if ((t.sectorCount || 0) === 0) {
+          cls = 'no-data';
+          title += ' [empty]';
         } else {
           cls = 'ok';
         }
-        title += ` (${t.sectorCount} sectors)`;
+        title += ` (${t.sectorCount || 0} sectors)`;
       } else {
+        cls = 'missing';
         title += ' [missing]';
+      }
+
+      // Add health percentage overlay if not 100%
+      if (score < 100) {
+        pct = score;
+        if (score < 50) cls = 'bad';
+        else if (score < 80) cls = 'error';
       }
 
       const selected = state.selectedTrack &&
@@ -1916,7 +2123,9 @@ function renderTrackMap(d) {
 
       html += `<div class="track-cell ${cls}${selected ? ' selected' : ''}"
                     data-track="${track}" data-side="${side}"
-                    data-tip="${title}"></div>`;
+                    data-tip="${title}${th ? ` | ${th.errors} err, ${th.truncated} trunc, ${th.missing} missing` : ''}">
+        ${pct ? `<span class="track-pct ${cls}">${pct}</span>` : ''}
+      </div>`;
     }
 
     html += '</div>';
@@ -1926,7 +2135,7 @@ function renderTrackMap(d) {
 
   const tooltip = $('#track-tooltip');
   dom.trackMapWrap.querySelectorAll('.track-cell').forEach(el => {
-    if (!el.classList.contains('missing')) {
+    if (!el.classList.contains('missing') && !el.classList.contains('no-data')) {
       el.addEventListener('click', () => {
         selectTrack(parseInt(el.dataset.track), parseInt(el.dataset.side));
       });
@@ -1959,7 +2168,13 @@ function selectTrack(track, side) {
   });
 
   const t = state.diskData.trackIndex.find(x => x.track === track && x.side === side);
-  if (!t || t.missing) return;
+  if (!t || t.missing || (t.sectorCount || 0) === 0) {
+    dom.sectorPanelHeader.textContent = `Track ${track}, Side ${side} — no data`;
+    dom.sectorTableWrap.innerHTML = '';
+    dom.hexSectorId.textContent = '';
+    dom.hexViewer.innerHTML = '<div class="hex-empty">Track has no data</div>';
+    return;
+  }
 
   dom.sectorPanelHeader.textContent = `Track ${track}, Side ${side} — ${t.sectorCount} sectors`;
 
@@ -2459,6 +2674,81 @@ async function downloadDisk(name) {
     setStatus(`Download failed: ${e.message}`);
   }
 }
+
+// ═══ Disk Health ═══
+let healthData = null;
+
+async function loadHealthData(name) {
+  try {
+    healthData = await api(`/api/disk/${encodeURIComponent(name)}/health`);
+    renderHealthSummary(healthData);
+    renderTrackMapWithHealth(state.diskData);
+  } catch (e) {
+    console.warn('Failed to load health data:', e);
+    healthData = null;
+  }
+}
+
+function renderHealthSummary(h) {
+  const scoreClass = h.score === 100 ? 'excellent' : h.score >= 80 ? 'good' : h.score >= 60 ? 'fair' : h.score >= 30 ? 'poor' : 'bad';
+  const label = scoreClass === 'excellent' ? 'Excellent' : scoreClass === 'good' ? 'Good' : scoreClass === 'fair' ? 'Fair' : scoreClass === 'poor' ? 'Poor' : 'Bad';
+
+  const el = $('#health-summary');
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="health-score-circle ${scoreClass}">
+      ${h.score}%
+    </div>
+    <div class="health-stats">
+      <div class="health-stat">
+        <span class="health-stat-label">Overall</span>
+        <span class="health-stat-value">${label}</span>
+      </div>
+      <div class="health-stat">
+        <span class="health-stat-label">Total Sectors</span>
+        <span class="health-stat-value">${h.totalSectors}</span>
+      </div>
+      <div class="health-stat">
+        <span class="health-stat-label">Errors</span>
+        <span class="health-stat-value ${h.errors ? 'error' : ''}">${h.errors}</span>
+      </div>
+      <div class="health-stat">
+        <span class="health-stat-label">Truncated</span>
+        <span class="health-stat-value ${h.truncated ? 'warning' : ''}">${h.truncated}</span>
+      </div>
+      <div class="health-stat">
+        <span class="health-stat-label">Missing Sectors</span>
+        <span class="health-stat-value ${h.missing ? 'error' : ''}">${h.missing}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderTrackMapWithHealth(d) {
+  renderTrackMap(d, healthData);
+}
+
+// ═══ Export ═══
+dom.exportBtn.addEventListener('click', async () => {
+  if (!state.activeDisk) return;
+  const name = state.activeDisk;
+  setStatus(`Exporting ${name}...`);
+  try {
+    const resp = await fetch(`/api/disk/${encodeURIComponent(name)}/export`);
+    const data = await resp.json();
+    const binary = new Uint8Array(atob(data.base64).split('').map(c => c.charCodeAt(0)));
+    const blob = new Blob([binary]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus(`Exported ${name}`);
+  } catch (e) {
+    setStatus(`Export failed: ${e.message}`);
+  }
+});
 
 // ═══ Settings ═══
 function setupToggle(toggleId, inputId, onColor, fieldId) {
