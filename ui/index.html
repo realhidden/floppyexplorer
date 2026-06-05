@@ -1644,7 +1644,7 @@ table.file-table {
            <input type="checkbox" id="cfg-sync-enabled" style="display:none">
          </label>
        </div>
-       <div id="s3-fields" style="opacity:0.4;pointer-events:none;transition:opacity 0.2s">
+       <div id="s3-fields" style="opacity:0.4;transition:opacity 0.2s">
          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
            <div>
              <label style="font-size:10px;color:var(--text-dim);margin-bottom:3px;display:block">Endpoint URL</label>
@@ -2771,7 +2771,6 @@ function setupToggle(toggleId, inputId, onColor, fieldId) {
       }
       if (fieldId) {
         $(`#${fieldId}`).style.opacity = input.checked ? '1' : '0.4';
-        $(`#${fieldId}`).style.pointerEvents = input.checked ? 'auto' : 'none';
       }
     });
   });
@@ -2797,7 +2796,6 @@ async function openSettings() {
     $('#cfg-sync-enabled').checked = syncOn;
     refreshToggle('cfg-sync-toggle', syncOn, 'var(--amber)');
     $('#s3-fields').style.opacity = syncOn ? '1' : '0.4';
-    $('#s3-fields').style.pointerEvents = syncOn ? 'auto' : 'none';
 
     const psOn = !!s3.pathStyle;
     $('#cfg-s3-path-style').checked = psOn;
