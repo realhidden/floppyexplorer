@@ -1684,7 +1684,7 @@ table.file-table {
              <span>Bucket in path, not subdomain</span>
            </label>
          </div>
-         <button class="btn-cancel" onclick="saveS3Config()" style="width:100%;background:linear-gradient(180deg, rgba(255,176,0,0.12), rgba(255,176,0,0.06));border-color:var(--amber-dim);color:var(--amber)">Save Cloud Settings</button>
+         <button class="btn-cancel" onclick="testAndSaveS3Config()" style="width:100%;background:linear-gradient(180deg, rgba(255,176,0,0.12), rgba(255,176,0,0.06));border-color:var(--amber-dim);color:var(--amber)">Test & Save</button>
          <div id="cfg-s3-status" style="margin-top:8px;font-size:10px;text-align:center;min-height:14px"></div>
        </div>
      </div>
@@ -1933,50 +1933,60 @@ async function loadDiskList() {
 function renderDiskList() {
   dom.diskCount.textContent = state.disks.length;
 
+  const cloudConfigured = state.disks.some(d => d.remote !== undefined);
   dom.diskList.innerHTML = state.disks.map(d => {
-    const syncHtml = d.local || d.remote ? `
-      <div class="sync-badges">
-        ${d.local ? '<span class="sync-badge local">LOCAL</span>' : ''}
-        ${d.remote ? '<span class="sync-badge remote">CLOUD</span>' : ''}
-        ${d.synced ? '<span class="sync-badge synced">✓</span>' : ''}
-        ${d.syncing === 'upload' ? '<span class="sync-badge syncing">↑ UP</span>' : ''}
-        ${d.syncing === 'download' ? '<span class="sync-badge syncing">↓ DOWN</span>' : ''}
-      </div>
-    ` : '';
+    const active = state.activeDisk === d.name ? ' active' : '';
+    const cloudOnly = !d.local && d.remote;
+    const synced = d.local && d.remote && d.synced;
+    const outOfSync = d.local && d.remote && !d.synced && !d.syncing;
+    const uploading = d.syncing === 'upload';
+    const downloading = d.syncing === 'download';
 
-    const actionBtns = d.local && d.remote ? `
-      <div class="sync-actions">
-        <button class="sync-action-btn" onclick="event.stopPropagation();uploadDisk('${d.name}')" title="Upload to cloud">↑</button>
-        <button class="sync-action-btn" onclick="event.stopPropagation();downloadDisk('${d.name}')" title="Download from cloud">↓</button>
-      </div>
-    ` : d.local ? `
-      <div class="sync-actions">
-        <button class="sync-action-btn" onclick="event.stopPropagation();uploadDisk('${d.name}')" title="Upload to cloud">↑</button>
-      </div>
-    ` : d.remote ? `
-      <div class="sync-actions">
-        <button class="sync-action-btn" onclick="event.stopPropagation();downloadDisk('${d.name}')" title="Download from cloud">↓</button>
-      </div>
-    ` : '';
+    // Status dot
+    let dot = '';
+    if (cloudOnly) dot = `<span style="width:5px;height:5px;border-radius:50%;background:#6699FF;flex-shrink:0" title="Cloud only — click to download"></span>`;
+    else if (uploading || downloading) dot = `<span style="width:5px;height:5px;border-radius:50%;background:var(--amber);flex-shrink:0;animation:pulse 1s infinite" title="Syncing..."></span>`;
+    else if (synced) dot = `<span style="width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0" title="Synced with cloud"></span>`;
+    else if (outOfSync) dot = `<span style="width:5px;height:5px;border-radius:50%;background:var(--amber);flex-shrink:0" title="Out of sync"></span>`;
 
+    // Icon
+    const icon = cloudOnly
+      ? `<svg class="disk-icon" viewBox="0 0 24 24" fill="currentColor" style="color:#6699FF;opacity:0.8"><path d="M19.35 10.04A7.49 7.49 0 0012 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 000 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>`
+      : `<svg class="disk-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-7-2c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-4-8h5V7H8v2z"/></svg>`;
+
+    // Format / status badge
+    const badge = d.format
+      ? `<span class="disk-badge">${d.format}</span>`
+      : d.valid === false
+        ? `<span class="disk-badge" style="color:var(--red)">ERR</span>`
+        : cloudOnly
+          ? `<span class="disk-badge" style="background:rgba(102,153,255,0.1);color:#6699FF">CLOUD</span>`
+          : '';
+
+    // Action buttons (upload/download)
+    let actions = '';
+    if (cloudConfigured && (d.local || d.remote)) {
+      const upBtn = d.local && !uploading
+        ? `<button class="sync-action-btn" onclick="event.stopPropagation();uploadDisk('${d.name}')" title="Upload to cloud">↑</button>` : '';
+      const dlBtn = d.remote && !downloading
+        ? `<button class="sync-action-btn" onclick="event.stopPropagation();downloadDisk('${d.name}')" title="Download from cloud">↓</button>` : '';
+      const spinning = (uploading || downloading)
+        ? `<span class="sync-action-btn" style="cursor:default;animation:pulse 1s infinite;border:none">${uploading ? '↑' : '↓'}</span>` : '';
+      actions = `<div class="sync-actions">${upBtn}${dlBtn}${spinning}</div>`;
+    }
+
+    const nameStyle = cloudOnly ? 'font-style:italic;opacity:0.75' : '';
     return `
-    <div class="disk-item${state.activeDisk === d.name ? ' active' : ''}"
-         data-name="${d.name}"
-         oncontextmenu="showCtxMenu(event, '${d.name}')">
-      <svg class="disk-icon" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-7-2c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-4-8h5V7H8v2z"/>
-      </svg>
-      <div>
-        <div class="disk-name">${d.name}</div>
-        <div class="disk-meta">
-          ${formatSize(d.size)}
-          ${d.format ? `<div class="disk-badge">${d.format}</div>` : d.valid === false ? '<div class="disk-badge" style="color:var(--red)">ERR</div>' : ''}
-          ${syncHtml}
+    <div class="disk-item${active}" data-name="${d.name}" oncontextmenu="showCtxMenu(event,'${d.name}')">
+      ${icon}
+      <div style="flex:1;min-width:0">
+        <div class="disk-name" style="display:flex;align-items:center;gap:5px">
+          ${dot}<span style="${nameStyle};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${d.name}</span>
         </div>
+        <div class="disk-meta">${formatSize(d.size)} ${badge}</div>
       </div>
-      ${actionBtns}
-    </div>
-    `;
+      ${actions}
+    </div>`;
   }).join('');
 
   dom.diskList.querySelectorAll('.disk-item').forEach(el => {
@@ -1994,6 +2004,23 @@ async function selectDisk(name) {
   }
 
   if (state.activeDisk === name && state.diskData) return;
+
+  // Cloud-only: offer to download first
+  const diskMeta = (state.disks || []).find(d => d.name === name);
+  if (diskMeta && !diskMeta.local && diskMeta.remote) {
+    if (!confirm(`"${name}" is cloud-only. Download it locally to view?`)) return;
+    try {
+      setStatus(`Downloading ${name} from cloud...`);
+      const res = await fetch(API + `/api/disk/${encodeURIComponent(name)}/download`, { method: 'POST' });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      await loadDiskList();
+    } catch (e) {
+      setStatus(`Download failed: ${e.message}`);
+      return;
+    }
+  }
+
   state.activeDisk = name;
   state.selectedTrack = null;
   state.selectedSector = null;
@@ -2488,9 +2515,14 @@ async function uploadFiles(fileList) {
 }
 
 // ═══ Read disk modal ═══
-dom.readBtn.addEventListener('click', () => {
-  dom.readFilename.value = `disk_${new Date().toISOString().slice(0,10).replace(/-/g,'')}_${Date.now() % 10000}.edsk`;
+dom.readBtn.addEventListener('click', async () => {
   dom.readModal.classList.add('visible');
+  try {
+    const { name } = await api('/api/disks/next-name');
+    dom.readFilename.value = name;
+  } catch {
+    dom.readFilename.value = `disk_${String(Math.max(0, state.disks.length) + 1).padStart(3, '0')}.edsk`;
+  }
 });
 
 dom.readCancel.addEventListener('click', () => {
@@ -2526,7 +2558,7 @@ window.showCtxMenu = function(e, name) {
   dom.ctxMenu.style.top = e.clientY + 'px';
   dom.ctxMenu.classList.add('visible');
 
-  const disk = (state.diskList || []).find(d => d.name === name);
+  const disk = (state.disks || []).find(d => d.name === name);
   const hasRemote = disk && disk.remote;
   const hasLocal = disk && disk.local;
   const hasBoth = disk && disk.local && disk.remote;
@@ -2829,43 +2861,60 @@ function refreshToggle(toggleId, checked, onColor) {
   }
 }
 
-async function saveS3Config() {
-  const cfg = await api('/api/config');
+async function testAndSaveS3Config() {
+  const statusEl = $('#cfg-s3-status');
   const enabled = $('#cfg-sync-enabled').checked;
 
+  const s3Params = {
+    endpoint: ($('#cfg-s3-endpoint').value || '').trim(),
+    bucket: ($('#cfg-s3-bucket').value || '').trim(),
+    region: ($('#cfg-s3-region').value || '').trim() || 'us-east-1',
+    accessKeyId: ($('#cfg-s3-access-key').value || '').trim(),
+    secretAccessKey: ($('#cfg-s3-secret-key').value || '').trim(),
+    prefix: ($('#cfg-s3-prefix').value || '').trim(),
+    pathStyle: $('#cfg-s3-path-style').checked,
+  };
+
   if (enabled) {
-    cfg.s3 = {
-      endpoint: ($('#cfg-s3-endpoint').value || '').trim(),
-      bucket: ($('#cfg-s3-bucket').value || '').trim(),
-      region: ($('#cfg-s3-region').value || '').trim() || 'us-east-1',
-      accessKeyId: ($('#cfg-s3-access-key').value || '').trim(),
-      secretAccessKey: ($('#cfg-s3-secret-key').value || '').trim(),
-      prefix: ($('#cfg-s3-prefix').value || '').trim(),
-      pathStyle: $('#cfg-s3-path-style').checked,
-    };
-  } else {
-    delete cfg.s3;
+    if (!s3Params.endpoint || !s3Params.bucket || !s3Params.accessKeyId || !s3Params.secretAccessKey) {
+      statusEl.textContent = 'Fill in endpoint, bucket, access key and secret key';
+      statusEl.style.color = 'var(--amber)';
+      return;
+    }
+    statusEl.textContent = 'Testing connection...';
+    statusEl.style.color = 'var(--text-dim)';
+    try {
+      const res = await fetch(API + '/api/config/test-s3', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(s3Params),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+    } catch (e) {
+      statusEl.textContent = '✗ ' + e.message;
+      statusEl.style.color = 'var(--red)';
+      return;
+    }
   }
 
-  delete cfg.version;
-
   try {
+    const cfg = await api('/api/config');
+    if (enabled && s3Params.endpoint && s3Params.bucket) {
+      cfg.s3 = s3Params;
+    } else {
+      delete cfg.s3;
+    }
+    delete cfg.version;
     await fetch(API + '/api/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cfg),
     });
-    const statusEl = $('#cfg-s3-status');
-    if (enabled) {
-      statusEl.textContent = 'Cloud sync enabled';
-      statusEl.style.color = 'var(--green)';
-    } else {
-      statusEl.textContent = 'Cloud sync disabled';
-      statusEl.style.color = 'var(--text-dim)';
-    }
+    statusEl.textContent = enabled ? '✓ Connected and saved' : 'Cloud sync disabled';
+    statusEl.style.color = enabled ? 'var(--green)' : 'var(--text-dim)';
     loadDiskList();
   } catch (e) {
-    const statusEl = $('#cfg-s3-status');
     statusEl.textContent = 'Save failed: ' + e.message;
     statusEl.style.color = 'var(--red)';
   }
@@ -3104,7 +3153,35 @@ document.addEventListener('keydown', (e) => {
     $('#settings-modal').classList.remove('visible');
     dom.ctxMenu.classList.remove('visible');
   }
-});
+
+  // Clipboard shortcuts — required for Neutralino WKWebView which doesn't enable them natively
+  if (e.metaKey || e.ctrlKey) {
+    const el = document.activeElement;
+    if (!el || !['INPUT', 'TEXTAREA'].includes(el.tagName) || el.disabled) return;
+    if (e.key === 'a') {
+      e.preventDefault();
+      el.select();
+    } else if (e.key === 'v' && !el.readOnly && navigator.clipboard?.readText) {
+      e.preventDefault();
+      navigator.clipboard.readText().then(text => {
+        const s = el.selectionStart, end = el.selectionEnd;
+        el.value = el.value.slice(0, s) + text + el.value.slice(end);
+        el.selectionStart = el.selectionEnd = s + text.length;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }).catch(() => {});
+    } else if (e.key === 'c' && el.selectionStart !== el.selectionEnd && navigator.clipboard?.writeText) {
+      e.preventDefault();
+      navigator.clipboard.writeText(el.value.slice(el.selectionStart, el.selectionEnd)).catch(() => {});
+    } else if (e.key === 'x' && !el.readOnly && el.selectionStart !== el.selectionEnd && navigator.clipboard?.writeText) {
+      e.preventDefault();
+      const s = el.selectionStart, end = el.selectionEnd;
+      navigator.clipboard.writeText(el.value.slice(s, end)).catch(() => {});
+      el.value = el.value.slice(0, s) + el.value.slice(end);
+      el.selectionStart = el.selectionEnd = s;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+}, true);
 
 // ═══ Init ═══
 async function init() {

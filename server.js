@@ -8,6 +8,7 @@ const { WebSocketServer } = require('ws');
 const edsk = require('./lib/edsk-parser');
 const { getMissingSectors } = edsk;
 const gw = require('./lib/greaseweazle');
+const storage = require('./lib/storage');
 
 const PORT = process.env.PORT || 3141;
 const APP_DIR = process.pkg ? path.dirname(process.execPath) : __dirname;
@@ -32,6 +33,11 @@ function addRecentDir(cfg, dir) {
   if (!cfg.recentDirs) cfg.recentDirs = [];
   cfg.recentDirs = [dir, ...cfg.recentDirs.filter(d => d !== dir)].slice(0, 8);
 }
+
+function initStorage() {
+  storage.init({ disksDir: getDisksDir(), s3: loadConfig().s3 });
+}
+initStorage();
 
 // Use ~/Documents/Floppy Explorer/ when running inside a .app bundle,
 // otherwise use local disks/ for development
@@ -118,23 +124,37 @@ function loadDisk(name) {
 // API handlers
 const api = {
   // List all disk images
-  'GET /api/disks': () => {
-    const disksDir = getDisksDir();
-    if (!fs.existsSync(disksDir)) return [];
-    const files = fs.readdirSync(disksDir).filter(f => /\.(e?dsk|img|ima)$/i.test(f)).sort();
-    return files.map(name => {
-      const stat = fs.statSync(path.join(disksDir, name));
-      const loaded = loadDisk(name);
+  'GET /api/disks': async () => {
+    const entries = await storage.list();
+    return entries.map(entry => {
+      if (!entry.local) {
+        return {
+          name: entry.name,
+          size: entry.size,
+          modified: entry.modified,
+          valid: null,
+          format: null,
+          local: false,
+          remote: true,
+          synced: false,
+          syncing: entry.syncing,
+        };
+      }
+      const loaded = loadDisk(entry.name);
       return {
-        name,
-        size: stat.size,
-        modified: stat.mtime,
+        name: entry.name,
+        size: entry.size,
+        modified: entry.modified,
         valid: loaded && !loaded.error,
         error: loaded?.error || null,
         format: loaded?.disk?.format || null,
         tracks: loaded?.disk?.tracks || null,
         sides: loaded?.disk?.sides || null,
         filesystem: loaded?.disk?.filesystem || null,
+        local: entry.local,
+        remote: entry.remote,
+        synced: entry.synced,
+        syncing: entry.syncing,
       };
     });
   },
@@ -506,12 +526,48 @@ const api = {
   },
 
   // Delete a disk image
-  'DELETE /api/disk/:name': (params) => {
-    const filePath = path.join(getDisksDir(), params.name);
-    if (!fs.existsSync(filePath)) return { status: 404, body: { error: 'Not found' } };
-    fs.unlinkSync(filePath);
+  'DELETE /api/disk/:name': async (params) => {
+    await storage.deleteBoth(params.name);
     diskCache.delete(params.name);
     return { deleted: true };
+  },
+
+  'POST /api/disk/:name/upload': async (params) => {
+    if (!storage.s3) return { status: 400, body: { error: 'Cloud sync not configured' } };
+    if (!storage.local || !storage.local.exists(params.name)) {
+      return { status: 404, body: { error: 'Local disk not found' } };
+    }
+    const buffer = storage.local.read(params.name);
+    await storage.upload(params.name, buffer);
+    return { ok: true };
+  },
+
+  'POST /api/disk/:name/download': async (params) => {
+    if (!storage.s3) return { status: 400, body: { error: 'Cloud sync not configured' } };
+    await storage.download(params.name);
+    diskCache.delete(params.name);
+    return { ok: true };
+  },
+
+  'DELETE /api/disk/:name/local': async (params) => {
+    await storage.deleteLocal(params.name);
+    diskCache.delete(params.name);
+    return { deleted: true };
+  },
+
+  'DELETE /api/disk/:name/remote': async (params) => {
+    await storage.deleteRemote(params.name);
+    return { deleted: true };
+  },
+
+  'GET /api/disks/next-name': async () => {
+    const entries = await storage.list();
+    let max = 0;
+    for (const e of entries) {
+      const m = e.name.match(/(\d+)(?:\.\w+)?$/);
+      if (m) max = Math.max(max, parseInt(m[1], 10));
+    }
+    return { name: `disk_${String(max + 1).padStart(3, '0')}.edsk` };
   },
 };
 
@@ -595,10 +651,44 @@ const server = http.createServer(async (req, res) => {
         saveConfigFile(body);
         diskCache.clear();
         watchDisksDir();
+        initStorage();
         res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ ok: true }));
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // POST /api/config/test-s3 — validate S3 credentials without saving
+  if (req.method === 'POST' && pathname === '/api/config/test-s3') {
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', async () => {
+      const corsH = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+      try {
+        const body = JSON.parse(Buffer.concat(chunks).toString());
+        const { endpoint, bucket, region, accessKeyId, secretAccessKey, prefix, pathStyle } = body;
+        if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) {
+          res.writeHead(400, corsH);
+          res.end(JSON.stringify({ error: 'endpoint, bucket, accessKeyId and secretAccessKey are required' }));
+          return;
+        }
+        const { S3Client, ListObjectsV2Command } = require('@aws-sdk/client-s3');
+        const client = new S3Client({
+          endpoint,
+          region: region || 'us-east-1',
+          credentials: { accessKeyId, secretAccessKey },
+          forcePathStyle: !!pathStyle,
+        });
+        const pfx = prefix ? (prefix.endsWith('/') ? prefix : prefix + '/') : 'floppy-explorer/';
+        await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: pfx, MaxKeys: 1 }));
+        res.writeHead(200, corsH);
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
         res.end(JSON.stringify({ error: e.message }));
       }
     });
