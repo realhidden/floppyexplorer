@@ -125,8 +125,8 @@ function loadDisk(name) {
 const api = {
   // List all disk images
   'GET /api/disks': async () => {
-    const entries = await storage.list();
-    return entries.map(entry => {
+    const { disks: entries, s3Error } = await storage.list();
+    const disks = entries.map(entry => {
       if (!entry.local) {
         return {
           name: entry.name,
@@ -157,6 +157,7 @@ const api = {
         syncing: entry.syncing,
       };
     });
+    return { disks, s3Error: s3Error || null };
   },
 
   // Get full disk info

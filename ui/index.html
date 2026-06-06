@@ -1492,6 +1492,8 @@ table.file-table {
       <span class="count" id="disk-count">0</span>
     </div>
 
+    <div id="s3-error-banner" style="display:none;margin:0 12px 8px;padding:6px 10px;background:rgba(220,50,50,0.1);border:1px solid rgba(220,50,50,0.3);border-radius:3px;font-size:10px;color:var(--red);line-height:1.4"></div>
+
     <div class="disk-list" id="disk-list"></div>
 
     <div class="upload-zone" id="upload-zone">
@@ -1923,9 +1925,12 @@ function handleWSMessage(msg) {
 // ═══ Disk list ═══
 async function loadDiskList() {
   try {
-    state.disks = await api('/api/disks');
+    const result = await api('/api/disks');
+    state.disks = result.disks || [];
+    state.s3Error = result.s3Error || null;
   } catch {
     state.disks = [];
+    state.s3Error = null;
   }
   renderDiskList();
 }
@@ -1933,7 +1938,15 @@ async function loadDiskList() {
 function renderDiskList() {
   dom.diskCount.textContent = state.disks.length;
 
-  const cloudConfigured = state.disks.some(d => d.remote !== undefined);
+  const banner = $('#s3-error-banner');
+  if (state.s3Error) {
+    banner.textContent = '⚠ Cloud sync error: ' + state.s3Error;
+    banner.style.display = '';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  const cloudConfigured = state.disks.some(d => d.remote);
   dom.diskList.innerHTML = state.disks.map(d => {
     const active = state.activeDisk === d.name ? ' active' : '';
     const cloudOnly = !d.local && d.remote;
